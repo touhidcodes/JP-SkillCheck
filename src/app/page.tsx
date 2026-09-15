@@ -8,6 +8,10 @@ import { verifyAccessToken } from '@/lib/auth/jwt';
  * to their appropriate dashboard without client-side flashing.
  */
 export default async function RootIndexPage() {
+  if (process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED === 'false') {
+    redirect('/manager');
+  }
+
   const token = cookies().get('access_token')?.value;
 
   if (!token) {

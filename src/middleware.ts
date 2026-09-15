@@ -4,11 +4,20 @@ import { verifyAccessToken } from '@/lib/auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const authEnabled = process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED !== 'false';
 
   const isAuthRoute = pathname === '/login';
   const isApiAuthRoute = pathname === '/api/auth/login' || pathname === '/api/auth/logout' || pathname === '/api/auth/refresh';
   const isCronRoute = pathname.startsWith('/api/cron/');
   const isApiRoute = pathname.startsWith('/api/');
+
+  // Development preview: show the manager UI without weakening API protection.
+  if (!authEnabled && !isApiRoute) {
+    if (pathname === '/login' || pathname === '/') {
+      return NextResponse.redirect(new URL('/manager', request.url));
+    }
+    return NextResponse.next();
+  }
 
   // Public student attendance form pages — no auth required
   const isPublicAttendRoute = pathname.startsWith('/attend/');
@@ -58,6 +67,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!login|api/auth/login|api/auth/logout|api/auth/refresh|cron|_next/static|_next/image|favicon.ico|assets/).*)',
+    '/((?!api/auth/login|api/auth/logout|api/auth/refresh|cron|_next/static|_next/image|favicon.ico|assets/).*)',
   ],
 };

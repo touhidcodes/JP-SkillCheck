@@ -10,6 +10,7 @@ interface User {
 }
 
 export function useAuth() {
+  const authEnabled = process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED !== 'false';
   const { data, isLoading, error } = useQuery<{ user: User }>({
     queryKey: ['auth'],
     queryFn: async () => {
@@ -20,7 +21,21 @@ export function useAuth() {
       return response.json();
     },
     retry: false,
+    enabled: authEnabled,
   });
+
+  if (!authEnabled) {
+    return {
+      user: {
+        id: 'dashboard-preview',
+        email: 'preview@local.dev',
+        name: 'Dashboard Preview',
+        role: 'manager' as const,
+      },
+      isLoading: false,
+      isAuthenticated: true,
+    };
+  }
 
   return {
     user: data?.user,
