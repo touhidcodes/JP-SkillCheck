@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/weekly",
+      "schedule": "0 9 * * 1"
+    }
+  ],
+  "functions": {
+    "src/app/api/cron/daily/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/weekly/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
