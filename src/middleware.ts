@@ -21,15 +21,17 @@ export async function middleware(request: NextRequest) {
 
   // Public student attendance form pages — no auth required
   const isPublicAttendRoute = pathname.startsWith('/attend/');
+  const isPublicInterviewRoute = pathname.startsWith('/interview');
   // Public student submission API — no auth required
   const isPublicAttendApi = pathname.startsWith('/api/attend/');
+  const isPublicInterviewApi = pathname.startsWith('/api/interview/');
 
   if (!isApiRoute) {
-    if (isAuthRoute || isPublicAttendRoute) {
+    if (isAuthRoute || isPublicAttendRoute || isPublicInterviewRoute) {
       return NextResponse.next();
     }
   } else {
-    if (isApiAuthRoute || isCronRoute || isPublicAttendApi) {
+    if (isApiAuthRoute || isCronRoute || isPublicAttendApi || isPublicInterviewApi) {
       return NextResponse.next();
     }
   }

@@ -64,6 +64,7 @@ export const SHEETS = {
   REPORT_DELIVERIES: 'report_deliveries',
   SCHEMA_CONSTRAINTS: 'schema_constraints',
   DATA_QUALITY_CHECKS: 'data_quality_checks',
+  INTERVIEW_RESULTS: 'interview_results',
 } as const;
 
 export type SheetName = (typeof SHEETS)[keyof typeof SHEETS];
@@ -200,5 +201,9 @@ export const SHEET_COLUMNS: Record<SheetName, readonly string[]> = {
   data_quality_checks: [
     'id', 'check_name', 'sheet_name', 'scope', 'status', 'checked_at',
     'records_checked', 'issues_found', 'details',
+  ],
+  interview_results: [
+    'id', 'interview_id', 'score', 'max_score', 'summary', 'strengths',
+    'improvements', 'question_count', 'completed_at',
   ],
 } as const;
