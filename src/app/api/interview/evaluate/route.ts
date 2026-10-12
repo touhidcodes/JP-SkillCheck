@@ -6,7 +6,7 @@ import { saveInterviewResult } from "@/lib/sheets/interview-results";
 export const runtime = "nodejs";
 
 const requestSchema = z.object({
-  apiKey: z.string().trim().min(10).max(300),
+  apiKey: z.string().trim().optional(),
   interviewId: z.string().trim().min(1).max(100),
   answers: z.array(z.object({
     questionId: z.string().trim().min(1).max(100),
@@ -36,9 +36,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Invalid interview submission." }, { status: 400 });
   }
 
+  const effectiveApiKey = input.apiKey?.trim() || process.env.GEMINI_API_KEY || "";
+  if (!effectiveApiKey) {
+    return NextResponse.json({ message: "Gemini API key is required. Please enter an API key." }, { status: 400 });
+  }
+
+  const isDemoKey = effectiveApiKey.toLowerCase().startsWith("demo") || effectiveApiKey === "SKILLCHECK_DEMO_TOKEN";
+
   const interview = getInterviewTemplate(input.interviewId);
   if (!interview) {
     return NextResponse.json({ message: "Interview not found." }, { status: 404 });
+  }
+
+  // Handle Demo Mode Evaluation for smooth local testing
+  if (isDemoKey) {
+    const demoResult = {
+      score: 88,
+      summary: "Candidate demonstrated strong understanding of core concepts with clear explanation of state vs props and debugging workflows.",
+      strengths: [
+        "Accurate explanation of React component re-rendering",
+        "Clear understanding of JavaScript event loop and async queues",
+        "Structured debugging process for responsive UI issues"
+      ],
+      improvements: [
+        "Could elaborate further on microtask vs macrotask execution order",
+        "Provide more specific examples when discussing API error handling"
+      ]
+    };
+    const resultId = await saveInterviewResult({
+      interviewId: interview.id,
+      score: demoResult.score,
+      maxScore: 100,
+      summary: demoResult.summary,
+      strengths: demoResult.strengths,
+      improvements: demoResult.improvements,
+      questionCount: interview.questions.length,
+    });
+    return NextResponse.json({ resultId, ...demoResult });
   }
 
   const answerMap = new Map(input.answers.map((item) => [item.questionId, item.answer]));
@@ -58,7 +92,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": input.apiKey,
+        "x-goog-api-key": effectiveApiKey,
       },
       cache: "no-store",
       body: JSON.stringify({

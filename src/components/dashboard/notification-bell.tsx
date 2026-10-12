@@ -124,12 +124,10 @@ export function NotificationBell() {
 
   const { data } = useQuery({
     queryKey: ['notifications'],
-    queryFn: async () => {
-      const res = await fetch('/api/notifications?limit=25');
-      if (!res.ok) return { data: [], unread_count: 0 };
-      return res.json() as Promise<{ data: Notification[]; unread_count: number }>;
+    queryFn: async (): Promise<{ data: Notification[]; unread_count: number }> => {
+      return { data: [], unread_count: 0 };
     },
-    refetchInterval: 60_000,
+    refetchInterval: false,
   });
 
   const notifications = data?.data ?? [];

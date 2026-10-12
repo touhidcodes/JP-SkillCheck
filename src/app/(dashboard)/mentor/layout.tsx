@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { PlacementStoreProvider } from '@/lib/placement/store';
 
 export default function MentorLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -15,9 +14,6 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
     if (!isAuthenticated) {
       router.push('/login');
       return;
-    }
-    if (user && user.role !== 'mentor') {
-      router.push('/manager');
     }
   }, [isLoading, isAuthenticated, user, router]);
 
@@ -32,13 +28,12 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
     );
   }
 
-  if (!user || user.role !== 'mentor') {
+  if (!user) {
     return null;
   }
 
   return (
-    <PlacementStoreProvider>
-      <DashboardShell title="My Dashboard">{children}</DashboardShell>
-    </PlacementStoreProvider>
+    <DashboardShell title="SkillCheck Mentor Portal">{children}</DashboardShell>
   );
 }
+

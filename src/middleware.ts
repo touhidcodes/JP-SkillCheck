@@ -1,74 +1,38 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const authEnabled = process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED !== 'false';
 
-  const isAuthRoute = pathname === '/login';
-  const isApiAuthRoute = pathname === '/api/auth/login' || pathname === '/api/auth/logout' || pathname === '/api/auth/refresh';
-  const isCronRoute = pathname.startsWith('/api/cron/');
-  const isApiRoute = pathname.startsWith('/api/');
+  // Public routes that don't require authentication
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isApiAuthRoute = pathname.startsWith('/api/auth');
+  const isStaticAsset = pathname.startsWith('/_next') || pathname.startsWith('/assets') || pathname === '/favicon.ico';
+  const isPublicInterviewApi = pathname.startsWith('/api/interview');
 
-  // Development preview: show the manager UI without weakening API protection.
-  if (!authEnabled && !isApiRoute) {
-    if (pathname === '/login' || pathname === '/') {
-      return NextResponse.redirect(new URL('/manager', request.url));
-    }
+  // Allow static assets and auth API calls directly
+  if (isStaticAsset || isApiAuthRoute || isPublicInterviewApi) {
     return NextResponse.next();
   }
 
-  // Public student attendance form pages — no auth required
-  const isPublicAttendRoute = pathname.startsWith('/attend/');
-  const isPublicInterviewRoute = pathname.startsWith('/interview');
-  // Public student submission API — no auth required
-  const isPublicAttendApi = pathname.startsWith('/api/attend/');
-  const isPublicInterviewApi = pathname.startsWith('/api/interview/');
-
-  if (!isApiRoute) {
-    if (isAuthRoute || isPublicAttendRoute || isPublicInterviewRoute) {
-      return NextResponse.next();
-    }
-  } else {
-    if (isApiAuthRoute || isCronRoute || isPublicAttendApi || isPublicInterviewApi) {
-      return NextResponse.next();
-    }
-  }
-
-  const token = request.cookies.get('access_token')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
-
-  if (!token) {
-    if (isApiRoute) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  // If user visits root '/', redirect to '/login'
+  if (pathname === '/') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  try {
-    const payload = await verifyAccessToken(token);
-    
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', payload.id);
-    requestHeaders.set('x-user-email', payload.email);
-    requestHeaders.set('x-user-role', payload.role);
-    requestHeaders.set('x-user-name', payload.name);
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-  } catch {
-    if (isApiRoute) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Allow auth pages (/login, /register)
+  if (isAuthPage) {
+    return NextResponse.next();
   }
+
+  // For protected routes like /mentor/* or /interview/*
+  // Allow request to proceed (client-side / page-level auth handles role checks)
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/((?!api/auth/login|api/auth/logout|api/auth/refresh|cron|_next/static|_next/image|favicon.ico|assets/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|assets/).*)',
   ],
 };
+

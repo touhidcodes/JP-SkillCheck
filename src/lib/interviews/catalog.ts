@@ -1,3 +1,5 @@
+import { getCustomInterviewById, type CustomInterviewSession } from "./custom-session";
+
 export type InterviewQuestion = {
   id: string;
   prompt: string;
@@ -12,10 +14,22 @@ export type InterviewTemplate = {
   role: string;
   durationMinutes: number;
   questions: InterviewQuestion[];
+  batch?: string;
+  cameraMandatory?: boolean;
+  allowedEmails?: string[];
+  slotStartTime?: string;
+  slotEndTime?: string;
+  instructions?: string;
 };
 
 export type PublicInterviewTemplate = Omit<InterviewTemplate, "questions"> & {
   questions: Array<Pick<InterviewQuestion, "id" | "prompt" | "durationSeconds">>;
+  batch?: string;
+  cameraMandatory?: boolean;
+  allowedEmails?: string[];
+  slotStartTime?: string;
+  slotEndTime?: string;
+  instructions?: string;
 };
 
 const INTERVIEWS: Record<string, InterviewTemplate> = {
@@ -24,6 +38,7 @@ const INTERVIEWS: Record<string, InterviewTemplate> = {
     title: "Frontend Developer Mock Interview",
     role: "Junior Frontend Developer",
     durationMinutes: 15,
+    cameraMandatory: true,
     questions: [
       {
         id: "javascript-event-loop",
@@ -65,7 +80,30 @@ const INTERVIEWS: Record<string, InterviewTemplate> = {
 };
 
 export function getInterviewTemplate(id: string): InterviewTemplate | null {
-  return INTERVIEWS[id] ?? null;
+  if (INTERVIEWS[id]) return INTERVIEWS[id];
+
+  const custom = getCustomInterviewById(id);
+  if (custom) {
+    return {
+      id: custom.id,
+      title: custom.title,
+      role: custom.role,
+      durationMinutes: custom.durationMinutes,
+      batch: custom.batch,
+      cameraMandatory: custom.cameraMandatory,
+      allowedEmails: custom.allowedEmails,
+      slotStartTime: custom.slotStartTime,
+      slotEndTime: custom.slotEndTime,
+      instructions: custom.instructions,
+      questions: custom.questions.map((q) => ({
+        ...q,
+        rubric: "Core evaluation criteria",
+        points: 20,
+      })),
+    };
+  }
+
+  return null;
 }
 
 export function toPublicInterview(interview: InterviewTemplate): PublicInterviewTemplate {
@@ -74,6 +112,12 @@ export function toPublicInterview(interview: InterviewTemplate): PublicInterview
     title: interview.title,
     role: interview.role,
     durationMinutes: interview.durationMinutes,
+    batch: interview.batch,
+    cameraMandatory: interview.cameraMandatory ?? true,
+    allowedEmails: interview.allowedEmails,
+    slotStartTime: interview.slotStartTime,
+    slotEndTime: interview.slotEndTime,
+    instructions: interview.instructions,
     questions: interview.questions.map(({ id, prompt, durationSeconds }) => ({
       id,
       prompt,

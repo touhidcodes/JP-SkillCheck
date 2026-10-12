@@ -129,6 +129,20 @@ export async function createSheet(
   sheetName: string,
   headers: string[],
 ): Promise<void> {
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createSheet", sheetName, headers }),
+      });
+      return;
+    } catch {
+      // fallback to Google API
+    }
+  }
+
   const client = await getSheetsClient();
   return withRetry(async () => {
     await client.spreadsheets.batchUpdate({
@@ -161,6 +175,20 @@ export async function appendRow(
   sheetName: string,
   values: unknown[],
 ): Promise<void> {
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "appendRow", sheetName, values }),
+      });
+      return;
+    } catch {
+      // fallback to Google API
+    }
+  }
+
   const client = await getSheetsClient();
   return withRetry(async () => {
     await client.spreadsheets.values.append({

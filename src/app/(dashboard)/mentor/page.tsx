@@ -1,136 +1,132 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UniversalExcelImport } from "@/components/import/universal-excel-import";
-import { usePlacementStore } from "@/lib/placement/store";
-import { buildRiskTrend } from "@/lib/risk/placement-risk";
-import { MentorDashboardHeader } from "@/components/mentor/mentor-dashboard-header";
-import { MentorStatsGrid } from "@/components/mentor/mentor-stats-grid";
-import { StageDistributionCard } from "@/components/mentor/stage-distribution-card";
-import { AttendanceTrendCard } from "@/components/mentor/attendance-trend-card";
-import { RiskOverTimeCard } from "@/components/mentor/risk-over-time-card";
-import { BatchPerformanceCard } from "@/components/mentor/batch-performance-card";
-import { MentorActivityFeed } from "@/components/mentor/mentor-activity-feed";
-import { MentorSmartNudges } from "@/components/mentor/mentor-smart-nudges";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Video, BookOpen, ClipboardCheck, Plus, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { getCustomInterviews } from "@/lib/interviews/custom-session";
+import { getCandidateReports } from "@/lib/interviews/results-store";
 
-function computeDashboardMetrics(students: any[], filteredStudents: any[], riskScores: any[], attendance: any[]) {
-  const total = students.length;
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const addedThisMonth = filteredStudents.filter(s => (s.created_at || s.join_date || "").slice(0, 7) === currentMonth).length;
-  const totalMenteesSubtitle = addedThisMonth > 0 ? `↑${addedThisMonth} this month` : "No new mentees this month";
+export default function MentorDashboardLandingPage() {
+  const [interviewsCount, setInterviewsCount] = useState(0);
+  const [reportsCount, setReportsCount] = useState(0);
 
-  const hiredThisMonth = filteredStudents.filter(s => s.hired && (s.hired_date || s.updated_at || "").slice(0, 7) === currentMonth).length;
-  const highRisk = riskScores.filter((risk) => filteredStudents.some(s => s.id === risk.student_id) && risk.level === "high").length;
-  const highRiskSubtitle = highRisk > 0 ? `${highRisk} need immediate attention` : "All clear";
-
-  const filteredAttendance = attendance.filter(record => filteredStudents.some(s => s.id === record.student_id));
-  const present = filteredAttendance.filter((record) => record.present).length;
-  const avgAttendance = filteredAttendance.length ? Math.round((present / filteredAttendance.length) * 100) : 0;
-
-  const activeThisWeek = filteredStudents.filter((student) => {
-    const date = new Date(student.last_activity_date || student.updated_at || "");
-    return !Number.isNaN(date.getTime()) && Date.now() - date.getTime() <= 7 * 24 * 60 * 60 * 1000;
-  }).length;
-
-  const stageData = ["learning", "applying", "interviewing", "offer_pending", "placed", "hired"].map((stage) => ({
-    stageId: stage,
-    name: stage.replace("_", " "),
-    value: filteredStudents.filter((student) => student.stage === stage).length,
-    fill: `var(--color-${stage})`,
-  }));
-
-  const groupedByDate = filteredAttendance.reduce((acc, curr) => {
-    if (!acc[curr.date]) acc[curr.date] = { total: 0, present: 0 };
-    acc[curr.date].total += 1;
-    if (curr.present) acc[curr.date].present += 1;
-    return acc;
-  }, {} as Record<string, { total: number; present: number }>);
-
-  const sortedDates = Object.keys(groupedByDate).sort();
-  const attendanceTrend = sortedDates.slice(-8).map((date, index) => {
-    const stats = groupedByDate[date];
-    const rate = stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
-    return { date, session: `S${index + 1}`, attendance: rate, present: stats.present, absent: stats.total - stats.present };
-  });
-
-  const lastSessionRate = attendanceTrend.length > 0 ? attendanceTrend[attendanceTrend.length - 1].attendance : avgAttendance;
-  const prevSessionRate = attendanceTrend.length > 1 ? attendanceTrend[attendanceTrend.length - 2].attendance : avgAttendance;
-  const rateDiff = lastSessionRate - prevSessionRate;
-  const avgAttendanceSubtitle = attendanceTrend.length > 1
-    ? (rateDiff > 0 ? `↑${rateDiff}% from last session` : rateDiff < 0 ? `↓${Math.abs(rateDiff)}% from last session` : "No change from last session")
-    : "Not enough data";
-
-  const batchData = Array.from(new Set(students.map((student) => student.batch).filter(Boolean))).map((batch) => {
-    const rows = students.filter((student) => student.batch === batch);
-    const hiredCount = rows.filter((student) => student.hired).length;
-    return { batch, placement: rows.length ? Math.round((hiredCount / rows.length) * 100) : 0, total: rows.length, hired: hiredCount };
-  });
-
-  return {
-    total,
-    totalMenteesSubtitle,
-    hiredThisMonth,
-    hiredPercentage: total ? Math.round((hiredThisMonth / total) * 100) : 0,
-    highRisk,
-    highRiskSubtitle,
-    avgAttendance,
-    avgAttendanceSubtitle,
-    activeThisWeek,
-    inactiveCount: filteredStudents.length - activeThisWeek,
-    stageData,
-    attendanceTrend,
-    batchData,
-  };
-}
-
-export default function MentorDashboardPage() {
-  const { students, attendance, riskScores, progressLogs, importHistory, alerts, isLoading } = usePlacementStore();
-  const [importOpen, setImportOpen] = useState(false);
-  const [activeBatch, setActiveBatch] = useState<string>("all");
-
-  const batches = useMemo(() => Array.from(new Set(students.map((s) => s.batch).filter(Boolean))).sort(), [students]);
-  const filteredStudents = useMemo(() => activeBatch === "all" ? students : students.filter(s => s.batch === activeBatch), [students, activeBatch]);
-  const metrics = useMemo(() => computeDashboardMetrics(students, filteredStudents, riskScores, attendance), [students, filteredStudents, riskScores, attendance]);
-  const riskTrend = useMemo(() => buildRiskTrend(filteredStudents, attendance, progressLogs), [filteredStudents, attendance, progressLogs]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <Skeleton key={index} className="h-28 rounded-2xl" />
-        ))}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const interviews = getCustomInterviews();
+    setInterviewsCount(Object.keys(interviews).length);
+    const reports = getCandidateReports();
+    setReportsCount(reports.length);
+  }, []);
 
   return (
-    <div className="space-y-6">
-      <MentorDashboardHeader
-        totalMentees={metrics.total}
-        batches={batches}
-        activeBatch={activeBatch}
-        onActiveBatchChange={setActiveBatch}
-        onImportClick={() => setImportOpen(true)}
-      />
-
-      <MentorStatsGrid {...metrics} />
-
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px] items-start">
-        <div className="grid gap-6 lg:grid-cols-2 items-start">
-          <StageDistributionCard stageData={metrics.stageData} totalFiltered={filteredStudents.length} />
-          <AttendanceTrendCard attendanceTrend={metrics.attendanceTrend} avgAttendance={metrics.avgAttendance} />
-          <RiskOverTimeCard riskTrend={riskTrend} />
-          <BatchPerformanceCard batchData={metrics.batchData} />
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 border border-indigo-800/40 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-2xl">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-indigo-400/40 text-indigo-200 bg-indigo-500/20 text-xs font-bold">
+              SkillCheck Portal
+            </Badge>
+            <span className="text-xs text-indigo-200/80">· AI Video Interview System</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Mentor Video Interview Dashboard
+          </h1>
+          <p className="text-xs text-indigo-100/90 leading-relaxed">
+            Create custom batch mock interviews, configure Google Sheet email whitelists, set time slot windows, and review AI assessment reports.
+          </p>
         </div>
 
-        <div className="space-y-6 lg:sticky lg:top-6">
-          <MentorSmartNudges students={students} progressLogs={progressLogs} attendance={attendance} />
-          <MentorActivityFeed alerts={alerts} students={students} importHistory={importHistory} />
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <Link href="/mentor/create-interview">
+            <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/20">
+              <Plus className="w-4 h-4 mr-1.5" /> Create New Interview
+            </Button>
+          </Link>
+          <Link href="/mentor/results">
+            <Button size="lg" variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/20 text-xs font-bold backdrop-blur-sm">
+              <ClipboardCheck className="w-4 h-4 mr-1.5 text-emerald-300" /> Student Results ({reportsCount})
+            </Button>
+          </Link>
         </div>
       </div>
 
-      <UniversalExcelImport open={importOpen} onOpenChange={setImportOpen} />
+      {/* Quick Action Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        {/* Card 1: Create Interview */}
+        <Card className="border border-border/80 bg-card text-card-foreground hover:border-indigo-500/50 shadow-sm transition-all flex flex-col justify-between">
+          <CardHeader className="p-5 pb-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+              <Video className="w-5 h-5" />
+            </div>
+            <CardTitle className="text-lg font-bold text-foreground">Create Video Interview</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
+              Setup batch-wise mock interviews with mandatory camera, Google Sheet whitelists, and time slot windows.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 pt-0">
+            <Link href="/mentor/create-interview">
+              <Button variant="secondary" className="w-full justify-between h-10 bg-muted hover:bg-indigo-50 dark:hover:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-bold text-xs border border-border">
+                Create Mock Session <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Created Interviews */}
+        <Card className="border border-border/80 bg-card text-card-foreground hover:border-purple-500/50 shadow-sm transition-all flex flex-col justify-between">
+          <CardHeader className="p-5 pb-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-bold text-foreground">Created Interviews</CardTitle>
+              <Badge variant="outline" className="text-xs text-purple-600 dark:text-purple-300 border-purple-500/30">
+                {interviewsCount} Active
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
+              Copy shareable student links, view active time slots, and manage created interview sessions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 pt-0">
+            <Link href="/mentor/interviews">
+              <Button variant="secondary" className="w-full justify-between h-10 bg-muted hover:bg-purple-50 dark:hover:bg-purple-950 text-purple-600 dark:text-purple-300 font-bold text-xs border border-border">
+                View Created Interviews <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Student Results & Reports */}
+        <Card className="border border-border/80 bg-card text-card-foreground hover:border-emerald-500/50 shadow-sm transition-all flex flex-col justify-between">
+          <CardHeader className="p-5 pb-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+              <ClipboardCheck className="w-5 h-5" />
+            </div>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-bold text-foreground">Student Reports</CardTitle>
+              <Badge variant="outline" className="text-xs text-emerald-600 dark:text-emerald-300 border-emerald-500/30">
+                {reportsCount} Evaluated
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
+              Review AI evaluation scores, per-question answers, eye contact logs, and tab switch warnings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 pt-0">
+            <Link href="/mentor/results">
+              <Button variant="secondary" className="w-full justify-between h-10 bg-muted hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-600 dark:text-emerald-300 font-bold text-xs border border-border">
+                Inspect Student Reports <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+

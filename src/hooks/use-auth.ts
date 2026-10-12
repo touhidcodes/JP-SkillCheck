@@ -1,45 +1,67 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
   role: 'manager' | 'mentor';
+  image?: string;
 }
 
 export function useAuth() {
-  const authEnabled = process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED !== 'false';
-  const { data, isLoading, error } = useQuery<{ user: User }>({
-    queryKey: ['auth'],
-    queryFn: async () => {
-      const response = await fetch('/api/auth/me');
-      if (!response.ok) {
-        throw new Error('Not authenticated');
-      }
-      return response.json();
-    },
-    retry: false,
-    enabled: authEnabled,
-  });
+  let sessionData: ReturnType<typeof useSession>['data'] = null;
+  let status: ReturnType<typeof useSession>['status'] = 'unauthenticated';
 
-  if (!authEnabled) {
-    return {
-      user: {
-        id: 'dashboard-preview',
-        email: 'preview@local.dev',
-        name: 'Dashboard Preview',
-        role: 'manager' as const,
-      },
-      isLoading: false,
-      isAuthenticated: true,
-    };
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const session = useSession();
+    sessionData = session.data;
+    status = session.status;
+  } catch {
+    // Graceful fallback if invoked outside SessionProvider context
   }
 
+  const [localUser, setLocalUser] = useState<User | null>(null);
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('skillcheck_user_session');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setLocalUser({
+          id: parsed.email || 'user_1',
+          email: parsed.email || 'user@example.com',
+          name: parsed.name || 'User',
+          role: parsed.role === 'mentor' ? 'mentor' : 'mentor',
+          image: parsed.image,
+        });
+      }
+    } catch {
+      // ignore JSON parse errors
+    } finally {
+      setIsClientLoaded(true);
+    }
+  }, []);
+
+  const user: User | null = localUser || (sessionData?.user ? {
+    id: sessionData.user.email || 'google_user',
+    email: sessionData.user.email || '',
+    name: sessionData.user.name || 'User',
+    role: 'mentor',
+    image: sessionData.user.image || undefined,
+  } : null);
+
+  const isLoading = !isClientLoaded || status === 'loading';
+
   return {
-    user: data?.user,
+    user,
     isLoading,
-    isAuthenticated: !error && !isLoading && !!data?.user,
+    isAuthenticated: !isLoading && !!user,
   };
 }
+
+

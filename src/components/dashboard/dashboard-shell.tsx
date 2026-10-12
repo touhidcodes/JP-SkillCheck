@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Kanban,
   LogOut, ClipboardCheck, BarChart2, Trophy,
   ShieldCheck, CheckCircle2, TrendingUp, AlertTriangle, BarChart3,
-  ChevronRight, Home,
+  ChevronRight, Home, Video, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -50,15 +50,10 @@ function RoleBasedSidebar({ role }: { role: UserRole }) {
     {
       label: 'Overview',
       items: [
-        { href: `/${role}`, label: 'Dashboard', icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: 'Mentor Analytics',
-      items: [
-        { href: `/${role}/analytics/mentor-performance`, label: 'Mentor Performance', icon: BarChart3 },
-        { href: `/${role}/analytics`, label: 'Analytics', icon: TrendingUp },
-        { href: `/${role}/team`, label: 'Team', icon: ShieldCheck },
+        { href: `/mentor`, label: 'Dashboard', icon: LayoutDashboard },
+        { href: `/mentor/create-interview`, label: 'Create Interview', icon: Video },
+        { href: `/mentor/interviews`, label: 'Created Interviews', icon: BookOpen },
+        { href: `/mentor/results`, label: 'Student Results', icon: ClipboardCheck },
       ],
     },
   ];
@@ -67,24 +62,10 @@ function RoleBasedSidebar({ role }: { role: UserRole }) {
     {
       label: 'Overview',
       items: [
-        { href: `/${role}`, label: 'My Dashboard', icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: 'My Mentees',
-      items: [
-        { href: `/${role}/students`,              label: 'My Mentees',    icon: Users },
-        { href: `/${role}/students/progress-logs`, label: 'Progress Logs', icon: BarChart2 },
-        { href: `/${role}/students/attendance`,    label: 'Attendance',    icon: ClipboardCheck },
-        { href: `/${role}/placement`,              label: 'Placement',     icon: Kanban },
-        { href: `/${role}/risk`,                   label: 'Risk Tracker',  icon: AlertTriangle },
-        { href: `/${role}/leaderboard`,            label: 'Leaderboard',   icon: Trophy },
-      ],
-    },
-    {
-      label: 'My Tasks',
-      items: [
-        { href: `/${role}/tasks`, label: 'My Tasks', icon: CheckCircle2 },
+        { href: `/${role}`, label: 'Dashboard', icon: LayoutDashboard },
+        { href: `/${role}/create-interview`, label: 'Create Interview', icon: Video },
+        { href: `/${role}/interviews`, label: 'Created Interviews', icon: BookOpen },
+        { href: `/${role}/results`, label: 'Student Results', icon: ClipboardCheck },
       ],
     },
   ];
@@ -156,9 +137,18 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
   const { user, isLoading } = useAuth();
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('skillcheck_user_session');
+      }
+      const { signOut } = await import('next-auth/react');
+      await signOut({ redirect: false });
+    } catch {
+      // ignore errors
+    } finally {
+      router.push('/login');
+      router.refresh();
+    }
   };
 
   if (isLoading) {
@@ -287,7 +277,7 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
 
           {/* Right section: notifications & date */}
           <div className="flex items-center gap-4">
-            <p className="text-[11px] font-bold text-muted-foreground/75 bg-muted/40 px-2.5 py-1 rounded-full border border-border/30 hidden sm:block">
+            <p suppressHydrationWarning className="text-[11px] font-bold text-muted-foreground/75 bg-muted/40 px-2.5 py-1 rounded-full border border-border/30 hidden sm:block">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'short',
                 year: 'numeric',
@@ -301,7 +291,7 @@ export function DashboardShell({ children, title }: DashboardShellProps) {
         </header>
 
         {/* Content viewport */}
-        <main className="flex-1 p-6 overflow-y-auto bg-background scrollbar-thin">
+        <main className="flex-1 p-6 overflow-y-auto overflow-x-hidden w-full max-w-full bg-background scrollbar-thin">
           {children}
         </main>
       </div>
