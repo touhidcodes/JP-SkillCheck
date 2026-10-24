@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { 
   Video, Sparkles, Clock, Calendar, Copy, Check, ExternalLink, 
@@ -11,18 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { getCustomInterviews, type CustomInterviewSession } from "@/lib/interviews/custom-session";
+import type { CustomInterviewSession } from "@/lib/interviews/custom-session";
 
-export function CreatedInterviewsView() {
-  const [sessions, setSessions] = useState<CustomInterviewSession[]>([]);
+type CreatedInterviewsViewProps = {
+  sessions: CustomInterviewSession[];
+};
+
+export function CreatedInterviewsView({ sessions }: CreatedInterviewsViewProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedEmailsId, setExpandedEmailsId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loaded = getCustomInterviews();
-    setSessions(Object.values(loaded));
-  }, []);
 
   const handleCopyLink = (id: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";

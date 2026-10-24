@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { saveCustomInterview, type CustomInterviewSession } from "@/lib/interviews/custom-session";
+import type { CustomInterviewSession } from "@/lib/interviews/custom-session";
 
 const PRESET_BATCHES = [
   "Batch-01 (Web Dev)",
@@ -185,7 +185,7 @@ export function CreateInterviewView() {
     setParsedEmails(parsedEmails.filter((e) => e !== emailToRemove));
   };
 
-  const handleCreateInterview = (e: React.FormEvent) => {
+  const handleCreateInterview = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const finalBatch = selectedBatch === "custom" ? customBatch : selectedBatch;
@@ -206,7 +206,7 @@ export function CreateInterviewView() {
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    try {
       const generatedToken = `batch_int_${Math.random().toString(36).substring(2, 9)}`;
       
       const newSession: CustomInterviewSession = {
@@ -226,28 +226,45 @@ export function CreateInterviewView() {
           {
             id: "q1",
             prompt: `[${finalBatch}] Explain key concepts relevant to ${interviewRole} and demonstrate your problem-solving approach.`,
+            rubric: `Explains the core concepts for a ${interviewRole}, uses accurate terminology, and gives a structured practical example.`,
+            points: 34,
             durationSeconds: 180,
           },
           {
             id: "q2",
             prompt: `How do you handle real-world challenges in ${skills.join(", ")} projects?`,
+            rubric: "Identifies a realistic challenge, explains the technical decision process, considers trade-offs, and describes a verifiable outcome.",
+            points: 33,
             durationSeconds: 180,
           },
           {
             id: "q3",
             prompt: "Describe a complex technical issue you recently solved and how you tested the solution.",
+            rubric: "Uses a clear situation-action-result structure, explains debugging evidence, and includes appropriate automated or manual verification.",
+            points: 33,
             durationSeconds: 180,
           },
         ],
       };
 
-      saveCustomInterview(newSession);
+      const response = await fetch("/api/interview/save-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSession),
+      });
+      const payload = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        throw new Error(payload.message || "Could not save the interview.");
+      }
 
       const link = `${window.location.origin}/interview/${generatedToken}`;
       setCreatedLink(link);
-      setIsSubmitting(false);
       toast.success("Batch Interview Session Created Successfully!");
-    }, 400);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the interview to Google Sheets.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopyLink = () => {

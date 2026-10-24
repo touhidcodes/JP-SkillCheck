@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   const isDemoKey = effectiveApiKey.toLowerCase().startsWith("demo") || effectiveApiKey === "SKILLCHECK_DEMO_TOKEN";
 
-  const interview = getInterviewTemplate(input.interviewId);
+  const interview = await getInterviewTemplate(input.interviewId);
   if (!interview) {
     return NextResponse.json({ message: "Interview not found." }, { status: 404 });
   }

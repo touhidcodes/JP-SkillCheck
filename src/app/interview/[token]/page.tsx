@@ -5,16 +5,18 @@ import { getInterviewTemplate, toPublicInterview } from "@/lib/interviews/catalo
 
 type PageProps = { params: { token: string } };
 
-export function generateMetadata({ params }: PageProps): Metadata {
-  const interview = getInterviewTemplate(params.token);
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const interview = await getInterviewTemplate(params.token);
   return {
     title: interview ? `${interview.title} | SkillCheck` : "Interview | SkillCheck",
     description: "Complete a private, timed mock interview.",
   };
 }
 
-export default function InterviewPage({ params }: PageProps) {
-  const interview = getInterviewTemplate(params.token);
+export default async function InterviewPage({ params }: PageProps) {
+  const interview = await getInterviewTemplate(params.token);
   if (!interview) notFound();
   return <InterviewRoom interview={toPublicInterview(interview)} />;
 }

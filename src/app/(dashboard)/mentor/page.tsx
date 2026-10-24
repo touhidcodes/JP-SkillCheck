@@ -6,7 +6,6 @@ import { Video, BookOpen, ClipboardCheck, Plus, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getCustomInterviews } from "@/lib/interviews/custom-session";
 import { getCandidateReports } from "@/lib/interviews/results-store";
 
 export default function MentorDashboardLandingPage() {
@@ -14,8 +13,6 @@ export default function MentorDashboardLandingPage() {
   const [reportsCount, setReportsCount] = useState(0);
 
   useEffect(() => {
-    const interviews = getCustomInterviews();
-    setInterviewsCount(Object.keys(interviews).length);
     const reports = getCandidateReports();
     setReportsCount(reports.length);
   }, []);
