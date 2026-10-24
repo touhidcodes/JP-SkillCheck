@@ -1,64 +1,157 @@
-import { readSheet, appendRow } from './client';
-import { ensureAllVideoInterviewSheets } from './initialize';
-import type { CustomInterviewSession } from '../interviews/custom-session';
+import "server-only";
 
-const SHEET_NAME = 'created_interviews';
+import { appendRow, appendRows, createSheet, readSheet, sheetExists } from "./client";
+import type { CustomInterviewQuestion, CustomInterviewSession } from "../interviews/custom-session";
 
-export async function saveCreatedInterviewToGoogleSheets(session: CustomInterviewSession): Promise<string> {
-  try {
-    await ensureAllVideoInterviewSheets();
-    await appendRow(SHEET_NAME, [
-      session.id,
-      session.title,
-      session.batch,
-      session.role,
-      session.durationMinutes,
-      session.cameraMandatory ? "true" : "false",
-      session.slotStartTime,
-      session.slotEndTime,
-      JSON.stringify(session.allowedEmails || []),
-      new Date().toISOString(),
-    ]);
-  } catch (err) {
-    console.warn("Google Sheets append interview session skipped or dev fallback:", err);
+const INTERVIEWS_SHEET = "created_interviews";
+const QUESTIONS_SHEET = "interview_questions";
+
+export const CREATED_INTERVIEW_HEADERS = [
+  "id",
+  "title",
+  "batch",
+  "role",
+  "duration_minutes",
+  "camera_mandatory",
+  "slot_start_time",
+  "slot_end_time",
+  "allowed_emails_json",
+  "created_at",
+  "skills_json",
+  "instructions",
+];
+
+export const INTERVIEW_QUESTION_HEADERS = [
+  "interview_id",
+  "question_id",
+  "position",
+  "prompt",
+  "rubric",
+  "points",
+  "duration_seconds",
+];
+
+async function ensureInterviewSheets(): Promise<void> {
+  if (!(await sheetExists(INTERVIEWS_SHEET))) {
+    await createSheet(INTERVIEWS_SHEET, CREATED_INTERVIEW_HEADERS);
   }
-  return session.id;
-}
-
-export async function getCreatedInterviewsFromSheets(): Promise<CustomInterviewSession[]> {
-  try {
-    await ensureAllVideoInterviewSheets();
-    const rows = await readSheet(SHEET_NAME);
-    return rows.map((row) => ({
-      id: row[0],
-      title: row[1],
-      batch: row[2],
-      role: row[3],
-      durationMinutes: Number(row[4]) || 30,
-      cameraMandatory: row[5] === "true",
-      slotStartTime: row[6],
-      slotEndTime: row[7],
-      allowedEmails: safeParseJson<string[]>(row[8], []),
-      skills: ["React", "JavaScript"],
-      instructions: "Ensure camera is turned on during the interview.",
-      createdAt: row[9] || new Date().toISOString(),
-      questions: [
-        {
-          id: "q1",
-          prompt: "Explain key concepts related to " + (row[3] || "the role"),
-          durationSeconds: 180,
-        }
-      ],
-    }));
-  } catch {
-    return [];
+  if (!(await sheetExists(QUESTIONS_SHEET))) {
+    await createSheet(QUESTIONS_SHEET, INTERVIEW_QUESTION_HEADERS);
   }
 }
 
-function safeParseJson<T>(val: string, fallback: T): T {
+function safeParseJson<T>(value: string | undefined, fallback: T): T {
   try {
-    return val ? JSON.parse(val) : fallback;
+    return value ? (JSON.parse(value) as T) : fallback;
   } catch {
     return fallback;
   }
+}
+
+function parseQuestion(row: string[]): CustomInterviewQuestion {
+  return {
+    id: row[1],
+    prompt: row[3],
+    rubric: row[4],
+    points: Number(row[5]) || 0,
+    durationSeconds: Number(row[6]) || 180,
+  };
+}
+
+function parseSession(row: string[], questions: CustomInterviewQuestion[]): CustomInterviewSession {
+  return {
+    id: row[0],
+    title: row[1],
+    batch: row[2],
+    role: row[3],
+    durationMinutes: Number(row[4]) || 15,
+    cameraMandatory: row[5] !== "false",
+    slotStartTime: row[6] || "",
+    slotEndTime: row[7] || "",
+    allowedEmails: safeParseJson<string[]>(row[8], []),
+    createdAt: row[9] || new Date(0).toISOString(),
+    skills: safeParseJson<string[]>(row[10], []),
+    instructions: row[11] || "",
+    questions,
+  };
+}
+
+export async function saveCreatedInterviewToGoogleSheets(
+  session: CustomInterviewSession,
+): Promise<string> {
+  await ensureInterviewSheets();
+
+  const existing = await getCreatedInterviewFromSheets(session.id);
+  if (existing) return existing.id;
+
+  await appendRow(INTERVIEWS_SHEET, [
+    session.id,
+    session.title,
+    session.batch,
+    session.role,
+    session.durationMinutes,
+    String(session.cameraMandatory),
+    session.slotStartTime,
+    session.slotEndTime,
+    JSON.stringify(session.allowedEmails),
+    session.createdAt,
+    JSON.stringify(session.skills),
+    session.instructions,
+  ]);
+
+  await appendRows(
+    QUESTIONS_SHEET,
+    session.questions.map((question, position) => [
+      session.id,
+      question.id,
+      position + 1,
+      question.prompt,
+      question.rubric,
+      question.points,
+      question.durationSeconds,
+    ]),
+  );
+
+  return session.id;
+}
+
+export async function getCreatedInterviewFromSheets(
+  id: string,
+): Promise<CustomInterviewSession | null> {
+  await ensureInterviewSheets();
+  const [interviewRows, questionRows] = await Promise.all([
+    readSheet(INTERVIEWS_SHEET),
+    readSheet(QUESTIONS_SHEET),
+  ]);
+  const interviewRow = interviewRows.find((row) => row[0] === id);
+  if (!interviewRow) return null;
+
+  const questions = questionRows
+    .filter((row) => row[0] === id)
+    .sort((a, b) => Number(a[2]) - Number(b[2]))
+    .map(parseQuestion);
+
+  return parseSession(interviewRow, questions);
+}
+
+export async function getCreatedInterviewsFromSheets(): Promise<CustomInterviewSession[]> {
+  await ensureInterviewSheets();
+  const [interviewRows, questionRows] = await Promise.all([
+    readSheet(INTERVIEWS_SHEET),
+    readSheet(QUESTIONS_SHEET),
+  ]);
+
+  const questionsByInterview = new Map<string, Array<{ position: number; question: CustomInterviewQuestion }>>();
+  for (const row of questionRows) {
+    const items = questionsByInterview.get(row[0]) ?? [];
+    items.push({ position: Number(row[2]) || 0, question: parseQuestion(row) });
+    questionsByInterview.set(row[0], items);
+  }
+
+  return interviewRows.map((row) => {
+    const questions = (questionsByInterview.get(row[0]) ?? [])
+      .sort((a, b) => a.position - b.position)
+      .map((item) => item.question);
+    return parseSession(row, questions);
+  });
 }

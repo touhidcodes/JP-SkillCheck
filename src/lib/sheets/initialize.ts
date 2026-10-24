@@ -5,7 +5,8 @@
  * 1. `users` - Mentor & Admin User accounts
  * 2. `students` - Whitelisted Student emails & candidate profiles
  * 3. `created_interviews` - Created batch mock interview sessions
- * 4. `interview_results` - Evaluation reports & anti-cheating logs
+ * 4. `interview_questions` - Questions, private rubrics, points, and timers
+ * 5. `interview_results` - Evaluation reports & anti-cheating logs
  */
 
 import { sheetExists, createSheet, appendRow } from "./client";
@@ -14,6 +15,7 @@ export const REQUIRED_SHEET_TABS = {
   USERS: "users",
   STUDENTS: "students",
   CREATED_INTERVIEWS: "created_interviews",
+  INTERVIEW_QUESTIONS: "interview_questions",
   INTERVIEW_RESULTS: "interview_results",
 } as const;
 
@@ -31,6 +33,17 @@ export const SHEET_TAB_HEADERS = {
     "slot_end_time",
     "allowed_emails_json",
     "created_at",
+    "skills_json",
+    "instructions",
+  ],
+  [REQUIRED_SHEET_TABS.INTERVIEW_QUESTIONS]: [
+    "interview_id",
+    "question_id",
+    "position",
+    "prompt",
+    "rubric",
+    "points",
+    "duration_seconds",
   ],
   [REQUIRED_SHEET_TABS.INTERVIEW_RESULTS]: [
     "id",
