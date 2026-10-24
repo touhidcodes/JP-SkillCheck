@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { LogIn, LogOut, User, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export interface UserSession {
   email: string;
@@ -51,8 +50,8 @@ export function GoogleAuthButton({
 
   if (session) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs">
-        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold overflow-hidden border border-indigo-500/30">
+      <div className="flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs shadow-sm">
+        <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-indigo-500/30 bg-indigo-500/10 font-bold text-indigo-700 dark:text-indigo-300">
           {session.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={session.image} alt={session.name} className="w-full h-full object-cover" />
@@ -61,8 +60,8 @@ export function GoogleAuthButton({
           )}
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-slate-200 text-[11px] leading-tight">{session.name}</span>
-          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-0.5">
+          <span className="text-[11px] font-bold leading-tight text-foreground">{session.name}</span>
+          <span className="flex items-center gap-0.5 font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-2.5 h-2.5" /> {session.email}
           </span>
         </div>
@@ -70,7 +69,7 @@ export function GoogleAuthButton({
           variant="ghost"
           size="sm"
           onClick={handleSignOut}
-          className="h-6 w-6 p-0 text-slate-400 hover:text-red-400 ml-1"
+          className="ml-1 h-6 w-6 p-0 text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
           title="Sign Out"
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -85,9 +84,9 @@ export function GoogleAuthButton({
         onClick={() => handleDemoSignIn("student1@example.com", "Student One (Google)")}
         variant="outline"
         size="sm"
-        className="h-8 text-xs bg-slate-900 border-slate-700 text-slate-200 hover:border-indigo-500 font-medium"
+        className="h-8 border-border bg-card text-xs font-medium text-foreground shadow-sm hover:border-indigo-500 hover:bg-accent"
       >
-        <LogIn className="w-3.5 h-3.5 mr-1.5 text-indigo-400" /> Sign in with Google
+        <LogIn className="mr-1.5 h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" /> Sign in with Google
       </Button>
     </div>
   );

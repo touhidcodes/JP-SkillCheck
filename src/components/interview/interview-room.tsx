@@ -12,8 +12,6 @@ import {
   ShieldCheck,
   Video,
   Volume2,
-  Lock,
-  Calendar,
   AlertTriangle,
   UserCheck,
   Camera,
@@ -27,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { saveCandidateReport } from "@/lib/interviews/results-store";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import type { PublicInterviewTemplate } from "@/lib/interviews/catalog";
 
 type Phase = "setup" | "active" | "scoring" | "complete";
@@ -43,36 +42,6 @@ type FaceGuidance = {
   tone: "neutral" | "good" | "warning";
 };
 type FaceLandmarkerInstance = import("@mediapipe/tasks-vision").FaceLandmarker;
-
-interface SpeechRecognitionResultLike {
-  readonly isFinal: boolean;
-  readonly length: number;
-  readonly [index: number]: { transcript: string };
-}
-
-interface SpeechRecognitionEventLike {
-  readonly resultIndex: number;
-  readonly results: {
-    readonly length: number;
-    readonly [index: number]: SpeechRecognitionResultLike;
-  };
-}
-
-interface SpeechRecognitionErrorLike {
-  readonly error: string;
-}
-
-interface SpeechRecognitionLike {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
 
 type SpeechRecognitionAny = any;
 
@@ -562,28 +531,29 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
   const seconds = (questionSecondsLeft % 60).toString().padStart(2, "0");
   const progress = phase === "complete" ? 100 : ((questionIndex + 1) / interview.questions.length) * 100;
   const faceTone = {
-    neutral: "border-slate-700 bg-slate-900/90 text-slate-300",
-    good: "border-emerald-500/40 bg-emerald-950/90 text-emerald-300",
-    warning: "border-amber-500/40 bg-amber-950/90 text-amber-300",
+    neutral: "border-border bg-card/95 text-muted-foreground",
+    good: "border-emerald-500/40 bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300",
+    warning: "border-amber-500/40 bg-amber-50/95 dark:bg-amber-950/90 text-amber-700 dark:text-amber-300",
   }[faceGuidance.tone];
 
   return (
-    <main className="h-screen max-h-screen overflow-hidden bg-slate-950 px-4 py-3.5 text-slate-100 sm:px-6 flex flex-col">
-      <div className="mx-auto max-w-6xl w-full flex flex-col h-full min-h-0">
-        <div className="mb-3 flex items-center justify-between gap-4 shrink-0">
+    <main className="min-h-screen overflow-x-hidden bg-gradient-to-br from-background via-background to-indigo-50/70 px-4 py-4 text-foreground transition-colors dark:to-indigo-950/20 sm:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col lg:h-full lg:min-h-0">
+        <div className="mb-4 flex shrink-0 items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card/80 px-4 py-3 shadow-sm backdrop-blur">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">SkillCheck · Video interview</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">SkillCheck · Video interview</span>
               {interview.batch && (
-                <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px] font-bold px-2 py-0.5">
+                <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 text-[10px] font-bold px-2 py-0.5">
                   {interview.batch}
                 </Badge>
               )}
             </div>
             <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{interview.title}</h1>
-            <p className="text-xs text-slate-400">{interview.role}</p>
+            <p className="text-xs text-muted-foreground">{interview.role}</p>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <GoogleAuthButton
               onAuthChange={(userSession) => {
                 if (userSession?.email) {
@@ -593,8 +563,8 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               }}
             />
             {phase === "active" && (
-              <div className="flex shrink-0 items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 font-mono text-sm">
-                <Clock3 className="size-4 text-indigo-400" /> {minutes}:{seconds}
+              <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-sm">
+                <Clock3 className="size-4 text-indigo-600 dark:text-indigo-400" /> {minutes}:{seconds}
               </div>
             )}
           </div>
@@ -602,19 +572,19 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
 
         {/* TIME SLOT BLOCKER SCREENS (Requirement 4) */}
         {!isSlotActive && phase === "setup" && (
-          <Card className="border-0 bg-slate-900 text-slate-100 ring-amber-500/50 p-6 text-center max-w-xl mx-auto space-y-3 my-auto">
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto">
+          <Card className="mx-auto my-auto max-w-xl space-y-3 border border-amber-300/70 bg-card p-6 text-center shadow-lg dark:border-amber-700/50">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
               <Clock3 className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold">
               {isSlotTooEarly ? "Interview Time Slot Has Not Started Yet" : "Interview Time Slot Expired"}
             </h2>
-            <p className="text-slate-300 text-xs max-w-md mx-auto">
+            <p className="text-muted-foreground text-xs max-w-md mx-auto">
               {isSlotTooEarly
                 ? `This batch interview time slot is scheduled to open at ${new Date(interview.slotStartTime!).toLocaleString()}. Please return during your allocated slot.`
                 : `This batch interview session ended at ${new Date(interview.slotEndTime!).toLocaleString()}. The time slot is now closed.`}
             </p>
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono inline-block">
+            <div className="p-3 rounded-xl bg-muted/35 border border-border text-xs font-mono inline-block">
               Time Slot Window: {new Date(interview.slotStartTime!).toLocaleString()} — {new Date(interview.slotEndTime!).toLocaleString()}
             </div>
             <div className="pt-1">
@@ -626,7 +596,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     window.location.reload();
                   }
                 }}
-                className="border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/20 text-xs h-9"
+                className="border-indigo-500/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 text-xs h-9"
               >
                 Reset & Activate Slot for Testing
               </Button>
@@ -635,11 +605,11 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
         )}
 
         {isSlotActive && phase !== "complete" && (
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] flex-1 min-h-0 items-start overflow-hidden">
-            <Card className="overflow-hidden border-0 bg-slate-900 text-slate-100 ring-slate-800 h-full flex flex-col">
-              <CardHeader className="px-5 py-3 border-b border-slate-800/60 shrink-0">
+          <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:overflow-hidden">
+            <Card className="flex h-full flex-col overflow-hidden border border-border/70 bg-card text-card-foreground shadow-sm">
+              <CardHeader className="px-5 py-3 border-b border-border/60 shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-indigo-400">
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                     <Camera className="w-4 h-4" />
                     <CardTitle className="text-base font-bold">Video Feed (Camera Mandatory)</CardTitle>
                   </div>
@@ -649,7 +619,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                 </div>
               </CardHeader>
               <CardContent className="p-3.5 flex-1 min-h-0 flex flex-col justify-center">
-                <div className="relative aspect-video max-h-[380px] w-full overflow-hidden rounded-xl bg-slate-950 border border-slate-800 my-auto">
+                <div className="relative aspect-video max-h-[380px] w-full overflow-hidden rounded-xl bg-muted/35 border border-border my-auto">
                   <video
                     ref={videoRef}
                     playsInline
@@ -657,9 +627,9 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     className={`h-full w-full scale-x-[-1] object-cover ${cameraReady ? "opacity-100" : "opacity-0"}`}
                   />
                   {!cameraReady && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-500 p-4 text-center">
-                      <Video className="size-8 text-indigo-400 animate-pulse" />
-                      <p className="text-xs font-semibold text-slate-300">Camera preview is required before starting</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground/80 p-4 text-center">
+                      <Video className="size-8 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                      <p className="text-xs font-semibold text-muted-foreground">Camera preview is required before starting</p>
                       <Button
                         type="button"
                         size="sm"
@@ -673,7 +643,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                           <><Video className="w-3.5 h-3.5 mr-1.5" /> Turn ON Camera</>
                         )}
                       </Button>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Allow browser permission when prompted</p>
+                      <p className="text-[10px] text-muted-foreground/80 mt-0.5">Allow browser permission when prompted</p>
                     </div>
                   )}
                   <div className={`absolute bottom-2.5 left-2.5 right-2.5 flex items-start gap-2 rounded-lg border px-3 py-1.5 backdrop-blur ${faceTone}`}>
@@ -689,17 +659,17 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
 
             <section className="h-full flex flex-col min-h-0">
               {phase === "setup" && (
-                <Card className="border-0 bg-slate-900 text-slate-100 ring-slate-800 shadow-xl h-full flex flex-col overflow-hidden">
-                  <CardHeader className="px-5 py-3 border-b border-slate-800 shrink-0">
+                <Card className="flex h-full flex-col overflow-hidden border border-border/70 bg-card text-card-foreground shadow-sm">
+                  <CardHeader className="px-5 py-3 border-b border-border shrink-0">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-indigo-400" /> Student Verification Steps
+                        <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Student Verification Steps
                       </CardTitle>
-                      <Badge variant="outline" className="text-[10px] text-indigo-300 border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5">
+                      <Badge variant="outline" className="text-[10px] text-indigo-700 dark:text-indigo-300 border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5">
                         {interview.durationMinutes} mins allocated
                       </Badge>
                     </div>
-                    <CardDescription className="text-[11px] text-slate-400 mt-0.5">
+                    <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
                       Complete all required verification checks before entering the live interview room.
                     </CardDescription>
 
@@ -707,30 +677,30 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     <div className="grid grid-cols-3 gap-2 pt-2">
                       <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
                         emailVerified
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                          : "bg-indigo-500/10 border-indigo-500/40 text-indigo-300"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                          : "bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300"
                       }`}>
                         <div className="text-[9px] opacity-70 uppercase tracking-wider">Step 1</div>
                         <div className="truncate text-[11px] flex items-center justify-center gap-1">
-                          {emailVerified ? <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" /> : null} Email Check
+                          {emailVerified ? <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 inline" /> : null} Email Check
                         </div>
                       </div>
 
                       <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
                         cameraReady
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                          : "bg-slate-800 border-slate-700 text-slate-400"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                          : "bg-muted border-border text-muted-foreground"
                       }`}>
                         <div className="text-[9px] opacity-70 uppercase tracking-wider">Step 2</div>
                         <div className="truncate text-[11px] flex items-center justify-center gap-1">
-                          {cameraReady ? <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" /> : null} Camera ON
+                          {cameraReady ? <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 inline" /> : null} Camera ON
                         </div>
                       </div>
 
                       <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
                         emailVerified && cameraReady
-                          ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-300"
-                          : "bg-slate-800 border-slate-700 text-slate-500"
+                          ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300"
+                          : "bg-muted border-border text-muted-foreground/80"
                       }`}>
                         <div className="text-[9px] opacity-70 uppercase tracking-wider">Step 3</div>
                         <div className="truncate text-[11px]">Start Interview</div>
@@ -741,17 +711,17 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                   <CardContent className="space-y-3.5 px-5 py-3.5 flex-1 overflow-y-auto">
 
                     {/* STEP 1: STUDENT EMAIL INPUT */}
-                    <form onSubmit={handleVerifyEmail} className="space-y-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <form onSubmit={handleVerifyEmail} className="space-y-2.5 p-3 rounded-xl bg-muted/35 border border-border">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="candidateEmail" className="text-slate-200 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-indigo-400" /> 1. Student Email Address
+                        <Label htmlFor="candidateEmail" className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> 1. Student Email Address
                         </Label>
                         {emailVerified ? (
-                          <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[9px] font-bold gap-1 px-2 py-0.5">
+                          <Badge variant="default" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[9px] font-bold gap-1 px-2 py-0.5">
                             <CheckCircle2 className="w-3 h-3" /> Email Verified
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[9px] text-amber-400 border-amber-500/30 px-2 py-0.5">
+                          <Badge variant="outline" className="text-[9px] text-amber-600 dark:text-amber-400 border-amber-500/30 px-2 py-0.5">
                             Required
                           </Badge>
                         )}
@@ -767,7 +737,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                             setCandidateEmail(e.target.value);
                             setEmailVerified(false);
                           }}
-                          className="h-9 border-slate-700 bg-slate-900 text-slate-100 text-xs"
+                          className="h-9 border-border bg-card text-foreground text-xs"
                           disabled={emailVerified}
                         />
                         {!emailVerified ? (
@@ -775,7 +745,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                             Verify Email
                           </Button>
                         ) : (
-                          <Button type="button" variant="ghost" onClick={() => setEmailVerified(false)} className="shrink-0 h-9 text-xs text-slate-400">
+                          <Button type="button" variant="ghost" onClick={() => setEmailVerified(false)} className="shrink-0 h-9 text-xs text-muted-foreground">
                             Edit Email
                           </Button>
                         )}
@@ -784,7 +754,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                       {/* Fast test selector pills */}
                       {!emailVerified && interview.allowedEmails && interview.allowedEmails.length > 0 && (
                         <div>
-                          <span className="text-[10px] text-slate-400 font-medium block mb-1">
+                          <span className="text-[10px] text-muted-foreground font-medium block mb-1">
                             Mentor Sheet Whitelisted Emails (Click to pick):
                           </span>
                           <div className="flex flex-wrap gap-1.5">
@@ -797,7 +767,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                                   setError("");
                                   setEmailVerified(true);
                                 }}
-                                className="text-[10px] px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700 text-indigo-300 hover:border-indigo-500 transition-colors"
+                                className="text-[10px] px-2 py-0.5 rounded-md bg-card border border-border text-indigo-700 dark:text-indigo-300 hover:border-indigo-500 transition-colors"
                               >
                                 {email}
                               </button>
@@ -807,19 +777,19 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                       )}
 
                       {emailVerified && (
-                        <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
                           ✓ Verified student email for {interview.batch || "Interview Session"}
                         </p>
                       )}
                     </form>
 
                     {/* STEP 2: CANDIDATE AI TOKEN / GEMINI API KEY */}
-                    <div className="space-y-2 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="space-y-2 p-3 rounded-xl bg-muted/35 border border-border">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="api-key" className="text-slate-200 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                          <KeyRound className="w-3.5 h-3.5 text-emerald-400" /> 2. Candidate AI Token / Gemini API Key
+                        <Label htmlFor="api-key" className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <KeyRound className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 2. Candidate AI Token / Gemini API Key
                         </Label>
-                        <Badge variant="outline" className="text-[9px] text-emerald-400 border-emerald-500/30 px-2 py-0.5">
+                        <Badge variant="outline" className="text-[9px] text-emerald-600 dark:text-emerald-400 border-emerald-500/30 px-2 py-0.5">
                           AI Engine Key
                         </Badge>
                       </div>
@@ -831,40 +801,40 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                           value={apiKey}
                           onChange={(event) => setApiKey(event.target.value)}
                           placeholder="Paste your Gemini AI token / API key here"
-                          className="h-9 border-slate-700 bg-slate-900 text-xs text-slate-100 flex-1"
+                          className="h-9 border-border bg-card text-xs text-foreground flex-1"
                         />
                         <button
                           type="button"
                           onClick={() => setApiKey("demo_key_skillcheck_2026")}
-                          className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                          className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
                         >
                           Fill Demo Token
                         </button>
                       </div>
-                      <p className="text-[10px] text-slate-400">
-                        Enter your personal AI token / API key, or click <span className="text-emerald-400 font-medium">Fill Demo Token</span> for instant testing.
+                      <p className="text-[10px] text-muted-foreground">
+                        Enter your personal AI token / API key, or click <span className="text-emerald-600 dark:text-emerald-400 font-medium">Fill Demo Token</span> for instant testing.
                       </p>
                     </div>
 
                     {/* STEP 3: MANDATORY CAMERA CONTROL */}
-                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="p-3 rounded-xl bg-muted/35 border border-border space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-200 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                          <Camera className="w-3.5 h-3.5 text-indigo-400" /> 3. Camera Device Status
+                        <span className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> 3. Camera Device Status
                         </span>
                         {cameraReady ? (
-                          <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[9px] font-bold gap-1 px-2 py-0.5">
+                          <Badge variant="default" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[9px] font-bold gap-1 px-2 py-0.5">
                             <CheckCircle2 className="w-3 h-3" /> Camera ON
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[9px] text-amber-400 border-amber-500/30 px-2 py-0.5">
+                          <Badge variant="outline" className="text-[9px] text-amber-600 dark:text-amber-400 border-amber-500/30 px-2 py-0.5">
                             Camera Required
                           </Badge>
                         )}
                       </div>
 
                       <div className="flex items-center justify-between gap-3 pt-0.5">
-                        <p className="text-[10px] text-slate-400 leading-normal flex-1">
+                        <p className="text-[10px] text-muted-foreground leading-normal flex-1">
                           Video feed is mandatory for attentiveness tracking.
                         </p>
                         {!cameraReady ? (
@@ -878,7 +848,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                             {starting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Video className="w-3.5 h-3.5 mr-1" /> Turn ON Camera</>}
                           </Button>
                         ) : (
-                          <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                             ✓ Stream Live
                           </span>
                         )}
@@ -886,7 +856,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     </div>
 
                     {error && (
-                      <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400 font-medium flex items-center gap-2">
+                      <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                         <span>{error}</span>
                       </div>
@@ -911,18 +881,18 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
 
               {phase === "active" && (
                 <div className="space-y-4">
-                  <Progress value={progress} className="[&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:bg-slate-800 [&_[data-slot=progress-indicator]]:bg-indigo-500" />
-                  <Card className="border-0 bg-slate-900 text-slate-100 ring-slate-800">
+                  <Progress value={progress} className="[&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:bg-muted [&_[data-slot=progress-indicator]]:bg-indigo-500" />
+                  <Card className="border border-border/70 bg-card text-card-foreground shadow-sm">
                     <CardHeader className="px-6 pt-5">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-indigo-400">Question {questionIndex + 1} of {interview.questions.length}</p>
+                        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Question {questionIndex + 1} of {interview.questions.length}</p>
                         <div className="flex items-center gap-2">
                           {tabSwitchCount > 0 && (
                             <Badge variant="destructive" className="text-[10px] font-bold">
                               ⚠️ Tab Switch Violation: {tabSwitchCount}
                             </Badge>
                           )}
-                          <p className="text-xs text-slate-500">{Math.ceil(question.durationSeconds / 60)} min allocated</p>
+                          <p className="text-xs text-muted-foreground/80">{Math.ceil(question.durationSeconds / 60)} min allocated</p>
                         </div>
                       </div>
                       <CardTitle className="pt-2 text-xl leading-8">{question.prompt}</CardTitle>
@@ -931,45 +901,45 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
 
                       {/* 3s INACTIVITY WARNING BANNER */}
                       {inactivitySeconds >= 3 && (
-                        <div className="p-3 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center justify-between animate-pulse">
+                        <div className="p-3 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center justify-between animate-pulse">
                           <span className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                             Inactivity Warning: No input detected for {inactivitySeconds} seconds!
                           </span>
-                          <Badge variant="outline" className="bg-amber-500/20 text-amber-200 border-amber-500/40 text-[10px]">
+                          <Badge variant="outline" className="bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/40 text-[10px]">
                             Auto-next in {10 - inactivitySeconds}s
                           </Badge>
                         </div>
                       )}
 
                       {error && (
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400 font-medium flex items-center gap-2">
+                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 shrink-0" />
                           <span>{error}</span>
                         </div>
                       )}
 
                       <div className="flex flex-wrap items-center gap-2">
-                        <Button type="button" variant="outline" onClick={replayQuestion} className="border-slate-700 bg-slate-950">
+                        <Button type="button" variant="outline" onClick={replayQuestion} className="border-border bg-muted/35">
                           <Volume2 /> Replay question
                         </Button>
                         <Button
                           type="button"
                           variant={listening ? "default" : "outline"}
                           onClick={toggleListening}
-                          className={listening ? "bg-red-500 hover:bg-red-400" : "border-slate-700 bg-slate-950"}
+                          className={listening ? "bg-red-500 hover:bg-red-400" : "border-border bg-muted/35"}
                         >
                           {listening ? <><MicOff /> Stop listening</> : <><Mic /> Speak answer</>}
                         </Button>
                       </div>
 
-                      <p className="text-xs text-slate-400">{speechMessage}</p>
+                      <p className="text-xs text-muted-foreground">{speechMessage}</p>
                       <Textarea
                         rows={6}
                         value={answer}
                         onChange={(event) => updateAnswer(event.target.value)}
                         placeholder="Type or dictate your answer here…"
-                        className="border-slate-700 bg-slate-950 text-base leading-7 text-slate-100"
+                        className="border-border bg-muted/35 text-base leading-7 text-foreground"
                       />
 
                       <div className="flex justify-end gap-3 pt-2">
@@ -983,14 +953,14 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               )}
 
               {phase === "scoring" && (
-                <Card className="border-0 bg-slate-900 text-slate-100 ring-slate-800">
+                <Card className="border border-border/70 bg-card text-card-foreground shadow-sm">
                   <CardHeader className="px-6 pt-5">
                     <CardTitle className="text-xl">Evaluating your interview</CardTitle>
-                    <CardDescription className="text-slate-400">Comparing your responses to reference rubrics…</CardDescription>
+                    <CardDescription className="text-muted-foreground">Comparing your responses to reference rubrics…</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center py-10">
-                    <Loader2 className="size-10 animate-spin text-indigo-400" />
-                    <p className="mt-4 text-sm text-slate-400">Generating AI evaluation report...</p>
+                    <Loader2 className="size-10 animate-spin text-indigo-600 dark:text-indigo-400" />
+                    <p className="mt-4 text-sm text-muted-foreground">Generating AI evaluation report...</p>
                   </CardContent>
                 </Card>
               )}
@@ -999,24 +969,24 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
         )}
 
         {phase === "complete" && evaluation && (
-          <Card className="border-0 bg-slate-900 text-slate-100 ring-slate-800 max-w-4xl mx-auto shadow-2xl">
-            <CardHeader className="px-6 pt-5 pb-4 border-b border-slate-800">
+          <Card className="mx-auto max-w-4xl border border-border/70 bg-card text-card-foreground shadow-xl">
+            <CardHeader className="px-6 pt-5 pb-4 border-b border-border">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs font-bold">
+                    <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 text-xs font-bold">
                       {interview.batch || "Interview Batch"}
                     </Badge>
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 inline" /> Saved to Mentor Dashboard
                     </span>
                   </div>
                   <CardTitle className="text-2xl font-bold">Interview Assessment Report</CardTitle>
-                  <CardDescription className="text-slate-400">{interview.title} · {interview.role}</CardDescription>
+                  <CardDescription className="text-muted-foreground">{interview.title} · {interview.role}</CardDescription>
                 </div>
                 <div className="text-right">
-                  <span className="text-4xl font-black text-indigo-400">{evaluation.score}</span>
-                  <span className="text-xs text-slate-400 block font-semibold">/ 100 Overall Score</span>
+                  <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{evaluation.score}</span>
+                  <span className="text-xs text-muted-foreground block font-semibold">/ 100 Overall Score</span>
                 </div>
               </div>
             </CardHeader>
@@ -1024,54 +994,54 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
             <CardContent className="space-y-5 px-6 py-5">
               {/* Proctoring & Anti-Cheating Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
-                    <Eye className="w-3.5 h-3.5 text-emerald-400" /> Eye Contact Score
+                <div className="p-3 rounded-xl bg-muted/35 border border-border text-xs">
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
+                    <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Eye Contact Score
                   </span>
-                  <span className="text-emerald-300 font-bold text-sm">94% Direct Eye Contact</span>
+                  <span className="text-emerald-700 dark:text-emerald-300 font-bold text-sm">94% Direct Eye Contact</span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
-                    <UserCheck className="w-3.5 h-3.5 text-indigo-400" /> Body Stability
+                <div className="p-3 rounded-xl bg-muted/35 border border-border text-xs">
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Body Stability
                   </span>
-                  <span className="text-indigo-300 font-bold text-sm">Stable Head Position</span>
+                  <span className="text-indigo-700 dark:text-indigo-300 font-bold text-sm">Stable Head Position</span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Tab Switch Violations
+                <div className="p-3 rounded-xl bg-muted/35 border border-border text-xs">
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold flex items-center gap-1 mb-0.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Tab Switch Violations
                   </span>
-                  <span className={`font-bold text-sm ${tabSwitchCount > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                  <span className={`font-bold text-sm ${tabSwitchCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {tabSwitchCount === 0 ? "0 Violations (Clean)" : `${tabSwitchCount} Tab Switch(es)`}
                   </span>
                 </div>
               </div>
 
               {/* Summary */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 leading-relaxed text-xs text-slate-300 space-y-1">
-                <span className="font-bold text-slate-100 block text-[10px] uppercase tracking-wider">AI Evaluation Summary</span>
+              <div className="p-4 rounded-xl bg-muted/35 border border-border leading-relaxed text-xs text-muted-foreground space-y-1">
+                <span className="font-bold text-foreground block text-[10px] uppercase tracking-wider">AI Evaluation Summary</span>
                 <p className="text-sm leading-relaxed">{evaluation.summary}</p>
               </div>
 
               {/* Strengths & Improvements */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-900/50 space-y-2">
-                  <span className="font-bold text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1">
+                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-900/50 space-y-2">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" /> Key Strengths
                   </span>
-                  <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
+                  <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                     {evaluation.strengths.map((s, idx) => (
                       <li key={idx}>{s}</li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-900/50 space-y-2">
-                  <span className="font-bold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1">
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-900/50 space-y-2">
+                  <span className="font-bold text-amber-600 dark:text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1">
                     <AlertTriangle className="w-4 h-4" /> Areas for Improvement
                   </span>
-                  <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
+                  <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                     {evaluation.improvements.map((imp, idx) => (
                       <li key={idx}>{imp}</li>
                     ))}
@@ -1080,8 +1050,8 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               </div>
 
               {/* Mentor Link Action */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
-                <p className="text-xs text-slate-400">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">
                   This report has been stored permanently for mentor evaluation.
                 </p>
                 <a
