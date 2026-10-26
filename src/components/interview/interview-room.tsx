@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   CheckCircle2,
   Clock3,
@@ -552,22 +553,30 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
   }[faceGuidance.tone];
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-gradient-to-br from-background via-background to-indigo-50/70 px-4 py-4 text-foreground transition-colors dark:to-indigo-950/20 sm:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col lg:h-full lg:min-h-0">
-        <div className="mb-4 flex shrink-0 items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card/80 px-4 py-3 shadow-sm backdrop-blur">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">SkillCheck · Video interview</span>
+    <main className="relative min-h-screen overflow-x-hidden bg-background px-4 py-4 text-foreground transition-colors sm:px-6 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_8%,rgba(99,102,241,0.12),transparent_28%),radial-gradient(circle_at_92%_92%,rgba(168,85,247,0.09),transparent_26%)] dark:bg-[radial-gradient(circle_at_8%_8%,rgba(99,102,241,0.20),transparent_26%),radial-gradient(circle_at_92%_92%,rgba(168,85,247,0.12),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_90%)]" />
+
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col lg:h-full lg:min-h-0">
+        <header className="mb-4 flex shrink-0 flex-col gap-4 rounded-3xl border border-border/70 bg-card/85 px-4 py-4 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="size-11 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+              <Image src="/assets/icon.webp" alt="PlacementKit" width={44} height={44} className="size-full object-cover" priority />
+            </div>
+            <div className="min-w-0">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">PlacementKit · Live interview</span>
               {interview.batch && (
-                <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 text-[10px] font-bold px-2 py-0.5">
+                <Badge variant="secondary" className="border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
                   {interview.batch}
                 </Badge>
               )}
             </div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{interview.title}</h1>
-            <p className="text-xs text-muted-foreground">{interview.role}</p>
+              <h1 className="truncate text-lg font-extrabold tracking-tight sm:text-xl">{interview.title}</h1>
+              <p className="text-xs text-muted-foreground">{interview.role} · {interview.durationMinutes} minute session</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
             <ThemeToggle />
             <GoogleAuthButton
               onAuthChange={(userSession) => {
@@ -578,16 +587,16 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               }}
             />
             {phase === "active" && (
-              <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-sm">
+              <div className="flex shrink-0 items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 font-mono text-sm font-bold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
                 <Clock3 className="size-4 text-indigo-600 dark:text-indigo-400" /> {minutes}:{seconds}
               </div>
             )}
           </div>
-        </div>
+        </header>
 
         {/* TIME SLOT BLOCKER SCREENS (Requirement 4) */}
         {!isSlotActive && phase === "setup" && (
-          <Card className="mx-auto my-auto max-w-xl space-y-3 border border-amber-300/70 bg-card p-6 text-center shadow-lg dark:border-amber-700/50">
+          <Card className="mx-auto my-auto max-w-xl space-y-3 rounded-3xl border border-amber-300/70 bg-card/95 p-8 text-center shadow-[0_24px_75px_-36px_rgba(15,23,42,0.45)] backdrop-blur dark:border-amber-700/50">
             <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
               <Clock3 className="w-6 h-6" />
             </div>
@@ -606,21 +615,24 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
         )}
 
         {isSlotActive && phase !== "complete" && (
-          <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)] lg:overflow-hidden">
-            <Card className="flex h-full flex-col overflow-hidden border border-border/70 bg-card text-card-foreground shadow-sm">
-              <CardHeader className="px-5 py-3 border-b border-border/60 shrink-0">
+          <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)] lg:overflow-hidden">
+            <Card className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-[0_22px_65px_-38px_rgba(15,23,42,0.45)] backdrop-blur">
+              <CardHeader className="shrink-0 border-b border-border/60 px-5 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                     <Camera className="w-4 h-4" />
-                    <CardTitle className="text-base font-bold">Video Feed (Camera Mandatory)</CardTitle>
+                    <div>
+                      <CardTitle className="text-base font-extrabold">Camera preview</CardTitle>
+                      <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">Your video is processed on this device</p>
+                    </div>
                   </div>
                   <Badge variant="destructive" className="text-[9px] uppercase font-bold px-2 py-0.5">
-                    Mandatory Camera ON
+                    Camera required
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-3.5 flex-1 min-h-0 flex flex-col justify-center">
-                <div className="relative aspect-video max-h-[380px] w-full overflow-hidden rounded-xl bg-muted/35 border border-border my-auto">
+                <div className="relative my-auto aspect-video max-h-[390px] w-full overflow-hidden rounded-2xl border border-border bg-muted/35 shadow-inner">
                   <video
                     ref={videoRef}
                     playsInline
@@ -660,23 +672,23 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
 
             <section className="h-full flex flex-col min-h-0">
               {phase === "setup" && (
-                <Card className="flex h-full flex-col overflow-hidden border border-border/70 bg-card text-card-foreground shadow-sm">
-                  <CardHeader className="px-5 py-3 border-b border-border shrink-0">
+                <Card className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-[0_22px_65px_-38px_rgba(15,23,42,0.45)] backdrop-blur">
+                  <CardHeader className="shrink-0 border-b border-border px-5 py-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Student Verification Steps
+                        <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Pre-interview checklist
                       </CardTitle>
                       <Badge variant="outline" className="text-[10px] text-indigo-700 dark:text-indigo-300 border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5">
                         {interview.durationMinutes} mins allocated
                       </Badge>
                     </div>
                     <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
-                      Complete all required verification checks before entering the live interview room.
+                      Complete these checks before entering your interview room.
                     </CardDescription>
 
                     {/* Step Tracker Pills */}
                     <div className="grid grid-cols-3 gap-2 pt-2">
-                      <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
+                      <div className={`rounded-xl border p-2 text-center text-xs font-semibold ${
                         emailVerified
                           ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                           : "bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300"
@@ -687,7 +699,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                         </div>
                       </div>
 
-                      <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
+                      <div className={`rounded-xl border p-2 text-center text-xs font-semibold ${
                         cameraReady
                           ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
                           : "bg-muted border-border text-muted-foreground"
@@ -698,7 +710,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                         </div>
                       </div>
 
-                      <div className={`p-1.5 rounded-lg text-center text-xs font-semibold border ${
+                      <div className={`rounded-xl border p-2 text-center text-xs font-semibold ${
                         emailVerified && cameraReady
                           ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-700 dark:text-indigo-300"
                           : "bg-muted border-border text-muted-foreground/80"
@@ -712,7 +724,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                   <CardContent className="space-y-3.5 px-5 py-3.5 flex-1 overflow-y-auto">
 
                     {/* STEP 1: STUDENT EMAIL INPUT */}
-                    <form onSubmit={handleVerifyEmail} className="space-y-2.5 p-3 rounded-xl bg-muted/35 border border-border">
+                    <form onSubmit={handleVerifyEmail} className="space-y-2.5 rounded-2xl border border-border/80 bg-background/70 p-3.5">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="candidateEmail" className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                           <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> 1. Student Email Address
@@ -738,11 +750,11 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                             setCandidateEmail(e.target.value);
                             setEmailVerified(false);
                           }}
-                          className="h-9 border-border bg-card text-foreground text-xs"
+                          className="h-10 rounded-xl border-border bg-card text-foreground text-xs shadow-none focus-visible:ring-indigo-500"
                           disabled={emailVerified}
                         />
                         {!emailVerified ? (
-                          <Button type="submit" variant="secondary" disabled={verifyingEmail} className="shrink-0 h-9 font-bold bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3">
+                          <Button type="submit" variant="secondary" disabled={verifyingEmail} className="h-10 shrink-0 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-500">
                             {verifyingEmail ? <Loader2 className="size-3.5 animate-spin" /> : "Verify Email"}
                           </Button>
                         ) : (
@@ -760,7 +772,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     </form>
 
                     {/* STEP 2: CANDIDATE AI TOKEN / GEMINI API KEY */}
-                    <div className="space-y-2 p-3 rounded-xl bg-muted/35 border border-border">
+                    <div className="space-y-2 rounded-2xl border border-border/80 bg-background/70 p-3.5">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="api-key" className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                           <KeyRound className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 2. Candidate AI Token / Gemini API Key
@@ -777,12 +789,12 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                           value={apiKey}
                           onChange={(event) => setApiKey(event.target.value)}
                           placeholder="Paste your Gemini AI token / API key here"
-                          className="h-9 border-border bg-card text-xs text-foreground flex-1"
+                          className="h-10 flex-1 rounded-xl border-border bg-card text-xs text-foreground shadow-none focus-visible:ring-indigo-500"
                         />
                         <button
                           type="button"
                           onClick={() => setApiKey("demo_key_skillcheck_2026")}
-                          className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                          className="shrink-0 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
                         >
                           Fill Demo Token
                         </button>
@@ -793,7 +805,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     </div>
 
                     {/* STEP 3: MANDATORY CAMERA CONTROL */}
-                    <div className="p-3 rounded-xl bg-muted/35 border border-border space-y-2">
+                    <div className="space-y-2 rounded-2xl border border-border/80 bg-background/70 p-3.5">
                       <div className="flex items-center justify-between">
                         <span className="text-foreground font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                           <Camera className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> 3. Camera Device Status
@@ -819,7 +831,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                             onClick={() => void enableCamera()}
                             disabled={starting}
                             size="sm"
-                            className="h-8 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 px-3"
+                            className="h-9 shrink-0 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white hover:bg-indigo-500"
                           >
                             {starting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Video className="w-3.5 h-3.5 mr-1" /> Turn ON Camera</>}
                           </Button>
@@ -843,7 +855,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                       onClick={() => void startInterview()}
                       disabled={starting || (interview.emailVerificationRequired && !emailVerified)}
                       size="lg"
-                      className="h-10 w-full bg-gradient-to-r from-indigo-600 to-indigo-500 font-bold text-xs text-white hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 shadow-md shadow-indigo-500/20"
+                      className="h-11 w-full rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 disabled:opacity-50"
                     >
                       {starting ? (
                         <><Loader2 className="animate-spin mr-2 w-3.5 h-3.5" /> Starting AI Interview…</>
@@ -858,7 +870,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               {phase === "active" && (
                 <div className="space-y-4">
                   <Progress value={progress} className="[&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:bg-muted [&_[data-slot=progress-indicator]]:bg-indigo-500" />
-                  <Card className="border border-border/70 bg-card text-card-foreground shadow-sm">
+                  <Card className="rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-[0_22px_65px_-38px_rgba(15,23,42,0.45)] backdrop-blur">
                     <CardHeader className="px-6 pt-5">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Question {questionIndex + 1} of {interview.questions.length}</p>
@@ -915,11 +927,11 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                         value={answer}
                         onChange={(event) => updateAnswer(event.target.value)}
                         placeholder="Type or dictate your answer here…"
-                        className="border-border bg-muted/35 text-base leading-7 text-foreground"
+                        className="rounded-2xl border-border bg-background/70 text-base leading-7 text-foreground shadow-none focus-visible:ring-indigo-500"
                       />
 
                       <div className="flex justify-end gap-3 pt-2">
-                        <Button onClick={submitCurrentAnswer} size="lg" className="bg-indigo-500 font-bold hover:bg-indigo-400">
+                        <Button onClick={submitCurrentAnswer} size="lg" className="rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500">
                           {questionIndex + 1 === interview.questions.length ? "Finish & Evaluate" : "Next Question"}
                         </Button>
                       </div>
@@ -929,7 +941,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
               )}
 
               {phase === "scoring" && (
-                <Card className="border border-border/70 bg-card text-card-foreground shadow-sm">
+                <Card className="rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-[0_22px_65px_-38px_rgba(15,23,42,0.45)] backdrop-blur">
                   <CardHeader className="px-6 pt-5">
                     <CardTitle className="text-xl">Evaluating your interview</CardTitle>
                     <CardDescription className="text-muted-foreground">Comparing your responses to reference rubrics…</CardDescription>
@@ -945,7 +957,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
         )}
 
         {phase === "complete" && evaluation && (
-          <Card className="mx-auto max-w-4xl border border-border/70 bg-card text-card-foreground shadow-xl">
+          <Card className="mx-auto max-w-4xl rounded-3xl border border-border/70 bg-card/95 text-card-foreground shadow-[0_24px_75px_-36px_rgba(15,23,42,0.45)] backdrop-blur">
             <CardHeader className="px-6 pt-5 pb-4 border-b border-border">
               <div className="flex items-center justify-between gap-4">
                 <div>
