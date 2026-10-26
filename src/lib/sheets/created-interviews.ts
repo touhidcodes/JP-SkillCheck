@@ -1,6 +1,6 @@
 import "server-only";
 
-import { appendRow, appendRows, createSheet, readSheet, sheetExists } from "./client";
+import { appendRow, appendRows, createSheet, readSheet, sheetExists, updateRow } from "./client";
 import type { CustomInterviewQuestion, CustomInterviewSession } from "../interviews/custom-session";
 
 const INTERVIEWS_SHEET = "created_interviews";
@@ -32,12 +32,25 @@ export const INTERVIEW_QUESTION_HEADERS = [
 ];
 
 async function ensureInterviewSheets(): Promise<void> {
-  if (!(await sheetExists(INTERVIEWS_SHEET))) {
+  const interviewsExist = await sheetExists(INTERVIEWS_SHEET);
+  if (!interviewsExist) {
     await createSheet(INTERVIEWS_SHEET, CREATED_INTERVIEW_HEADERS);
+  } else {
+    await updateRow(INTERVIEWS_SHEET, 1, CREATED_INTERVIEW_HEADERS);
   }
   if (!(await sheetExists(QUESTIONS_SHEET))) {
     await createSheet(QUESTIONS_SHEET, INTERVIEW_QUESTION_HEADERS);
+  } else {
+    await updateRow(QUESTIONS_SHEET, 1, INTERVIEW_QUESTION_HEADERS);
   }
+}
+
+async function interviewSheetsExist(): Promise<boolean> {
+  const [interviewsExist, questionsExist] = await Promise.all([
+    sheetExists(INTERVIEWS_SHEET),
+    sheetExists(QUESTIONS_SHEET),
+  ]);
+  return interviewsExist && questionsExist;
 }
 
 function safeParseJson<T>(value: string | undefined, fallback: T): T {
@@ -118,7 +131,7 @@ export async function saveCreatedInterviewToGoogleSheets(
 export async function getCreatedInterviewFromSheets(
   id: string,
 ): Promise<CustomInterviewSession | null> {
-  await ensureInterviewSheets();
+  if (!(await interviewSheetsExist())) return null;
   const [interviewRows, questionRows] = await Promise.all([
     readSheet(INTERVIEWS_SHEET),
     readSheet(QUESTIONS_SHEET),
@@ -135,7 +148,7 @@ export async function getCreatedInterviewFromSheets(
 }
 
 export async function getCreatedInterviewsFromSheets(): Promise<CustomInterviewSession[]> {
-  await ensureInterviewSheets();
+  if (!(await interviewSheetsExist())) return [];
   const [interviewRows, questionRows] = await Promise.all([
     readSheet(INTERVIEWS_SHEET),
     readSheet(QUESTIONS_SHEET),

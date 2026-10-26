@@ -56,15 +56,13 @@ export async function POST(req: Request) {
     const session = parsed.data;
     await saveCreatedInterviewToGoogleSheets(session);
 
-    await Promise.all(
-      session.allowedEmails.map((email) =>
-        saveStudentToGoogleSheets({
-          batch: session.batch,
-          email,
-          status: "whitelisted",
-        }),
-      ),
-    );
+    for (const email of session.allowedEmails) {
+      await saveStudentToGoogleSheets({
+        batch: session.batch,
+        email,
+        status: "whitelisted",
+      });
+    }
 
     return NextResponse.json({ success: true, id: session.id }, { status: 201 });
   } catch (error) {

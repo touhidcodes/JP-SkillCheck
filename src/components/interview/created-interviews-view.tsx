@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { 
-  Video, Sparkles, Clock, Calendar, Copy, Check, ExternalLink, 
-  Plus, Users, Camera, Lock, ShieldCheck, Search, Filter, Eye
+import {
+  Video, Clock, Copy, Check, ExternalLink,
+  Plus, Camera, Lock, Search, Eye
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

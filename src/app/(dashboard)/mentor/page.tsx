@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { getCandidateReports } from "@/lib/interviews/results-store";
 
 export default function MentorDashboardLandingPage() {
-  const [interviewsCount, setInterviewsCount] = useState(0);
   const [reportsCount, setReportsCount] = useState(0);
 
   useEffect(() => {
@@ -82,7 +81,7 @@ export default function MentorDashboardLandingPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-bold text-foreground">Created Interviews</CardTitle>
               <Badge variant="outline" className="text-xs text-purple-600 dark:text-purple-300 border-purple-500/30">
-                {interviewsCount} Active
+                Sheets-backed
               </Badge>
             </div>
             <CardDescription className="text-xs text-muted-foreground mt-1">

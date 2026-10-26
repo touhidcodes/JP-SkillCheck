@@ -56,6 +56,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
   const [apiKey, setApiKey] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [questionSecondsLeft, setQuestionSecondsLeft] = useState(interview.questions[0].durationSeconds);
@@ -93,7 +94,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
   const isSlotActive = !isSlotTooEarly && !isSlotExpired;
 
   // Email Whitelist Verification Handler (Requirement 3)
-  const handleVerifyEmail = (e: React.FormEvent) => {
+  const handleVerifyEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const emailToTest = candidateEmail.trim().toLowerCase();
@@ -103,12 +104,26 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
       return;
     }
 
-    if (interview.allowedEmails && interview.allowedEmails.length > 0) {
-      const isAllowed = interview.allowedEmails.some((e) => e.toLowerCase() === emailToTest);
-      if (!isAllowed) {
-        setError(`Access Denied: Email "${emailToTest}" is not listed in the mentor's uploaded Google Sheet.`);
+    if (interview.emailVerificationRequired) {
+      setVerifyingEmail(true);
+      try {
+        const response = await fetch("/api/interview/verify-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ interviewId: interview.id, email: emailToTest }),
+        });
+        const payload = (await response.json()) as { allowed?: boolean; message?: string };
+        if (!response.ok || !payload.allowed) {
+          setError(payload.message || `Access Denied: Email "${emailToTest}" is not authorized for this interview.`);
+          setEmailVerified(false);
+          return;
+        }
+      } catch {
+        setError("Could not verify your email right now. Please try again.");
         setEmailVerified(false);
         return;
+      } finally {
+        setVerifyingEmail(false);
       }
     }
 
@@ -494,7 +509,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
   }
 
   async function startInterview() {
-    if (interview.allowedEmails && interview.allowedEmails.length > 0 && !emailVerified) {
+    if (interview.emailVerificationRequired && !emailVerified) {
       setError("Requirement: Please enter and verify your candidate email before starting.");
       return;
     }
@@ -586,20 +601,6 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
             </p>
             <div className="p-3 rounded-xl bg-muted/35 border border-border text-xs font-mono inline-block">
               Time Slot Window: {new Date(interview.slotStartTime!).toLocaleString()} — {new Date(interview.slotEndTime!).toLocaleString()}
-            </div>
-            <div className="pt-1">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    localStorage.clear();
-                    window.location.reload();
-                  }
-                }}
-                className="border-indigo-500/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 text-xs h-9"
-              >
-                Reset & Activate Slot for Testing
-              </Button>
             </div>
           </Card>
         )}
@@ -741,8 +742,8 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                           disabled={emailVerified}
                         />
                         {!emailVerified ? (
-                          <Button type="submit" variant="secondary" className="shrink-0 h-9 font-bold bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3">
-                            Verify Email
+                          <Button type="submit" variant="secondary" disabled={verifyingEmail} className="shrink-0 h-9 font-bold bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3">
+                            {verifyingEmail ? <Loader2 className="size-3.5 animate-spin" /> : "Verify Email"}
                           </Button>
                         ) : (
                           <Button type="button" variant="ghost" onClick={() => setEmailVerified(false)} className="shrink-0 h-9 text-xs text-muted-foreground">
@@ -750,31 +751,6 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                           </Button>
                         )}
                       </div>
-
-                      {/* Fast test selector pills */}
-                      {!emailVerified && interview.allowedEmails && interview.allowedEmails.length > 0 && (
-                        <div>
-                          <span className="text-[10px] text-muted-foreground font-medium block mb-1">
-                            Mentor Sheet Whitelisted Emails (Click to pick):
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {interview.allowedEmails.slice(0, 4).map((email) => (
-                              <button
-                                key={email}
-                                type="button"
-                                onClick={() => {
-                                  setCandidateEmail(email);
-                                  setError("");
-                                  setEmailVerified(true);
-                                }}
-                                className="text-[10px] px-2 py-0.5 rounded-md bg-card border border-border text-indigo-700 dark:text-indigo-300 hover:border-indigo-500 transition-colors"
-                              >
-                                {email}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       {emailVerified && (
                         <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
@@ -865,7 +841,7 @@ export function InterviewRoom({ interview }: { interview: PublicInterviewTemplat
                     {/* STEP 4: START INTERVIEW CTA */}
                     <Button
                       onClick={() => void startInterview()}
-                      disabled={starting || (interview.allowedEmails && interview.allowedEmails.length > 0 && !emailVerified)}
+                      disabled={starting || (interview.emailVerificationRequired && !emailVerified)}
                       size="lg"
                       className="h-10 w-full bg-gradient-to-r from-indigo-600 to-indigo-500 font-bold text-xs text-white hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 shadow-md shadow-indigo-500/20"
                     >

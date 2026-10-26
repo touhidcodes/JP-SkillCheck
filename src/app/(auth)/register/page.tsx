@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, Eye, EyeOff, Video, UserCheck, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, Loader2, Lock, Mail, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 
 export default function RegisterPage() {
@@ -19,8 +18,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRegister = (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
 
     const session = {
@@ -30,185 +29,105 @@ export default function RegisterPage() {
       image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
     };
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("skillcheck_user_session", JSON.stringify(session));
-    }
-
+    localStorage.setItem("skillcheck_user_session", JSON.stringify(session));
     fetch("/api/auth/save-user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: session.email,
-        name: session.name,
-        role: session.role,
-      }),
+      body: JSON.stringify({ email: session.email, name: session.name, role: session.role }),
     }).catch(() => {});
 
     setTimeout(() => {
       setLoading(false);
-      if (role === "mentor") {
-        router.push("/mentor/interviews");
-      } else {
-        router.push("/interview/batch_01_frontend");
-      }
+      router.push(role === "mentor" ? "/mentor/interviews" : "/interview/batch_01_frontend");
     }, 600);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-            <Video className="w-3.5 h-3.5" /> SkillCheck · AI Video Interview Platform
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Create New Account</h1>
-          <p className="text-xs text-slate-400">
-            Join SkillCheck to take AI video mock interviews or mentor candidate batches.
-          </p>
+    <div className="animate-fade-up">
+      <div className="mb-6 text-center lg:text-left">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Start preparing</p>
+        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Create your account</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Join PlacementKit as a candidate or manage interview sessions as a mentor.</p>
+      </div>
+
+      <div className="rounded-3xl border border-border/80 bg-card/95 p-5 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.35)] backdrop-blur sm:p-7">
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1" role="tablist" aria-label="Account type">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={role === "candidate"}
+            onClick={() => setRole("candidate")}
+            className={`flex h-10 items-center justify-center gap-2 rounded-lg text-xs font-bold transition-all ${role === "candidate" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <GraduationCap className="size-4" /> Candidate
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={role === "mentor"}
+            onClick={() => setRole("mentor")}
+            className={`flex h-10 items-center justify-center gap-2 rounded-lg text-xs font-bold transition-all ${role === "mentor" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <ShieldCheck className="size-4" /> Mentor / Admin
+          </button>
         </div>
 
-        <Card className="border-0 bg-slate-900 text-slate-100 ring-1 ring-slate-800 shadow-2xl overflow-hidden">
-          {/* Top accent bar */}
-          <div className="h-1 bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500" />
+        <div className="mt-5 flex justify-center">
+          <GoogleAuthButton
+            onAuthChange={(userSession) => {
+              if (userSession) router.push(role === "mentor" ? "/mentor/interviews" : "/interview/batch_01_frontend");
+            }}
+          />
+        </div>
 
-          <CardHeader className="p-6 pb-4 border-b border-slate-800/80">
-            <CardTitle className="text-lg font-bold text-center">Choose Account Type</CardTitle>
-            
-            {/* Role Tab Switcher */}
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setRole("candidate")}
-                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
-                  role === "candidate"
-                    ? "bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
-                    : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" /> Candidate (Student)
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">or use email</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <form onSubmit={handleRegister} className="space-y-3.5">
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-xs font-bold">Full name</Label>
+            <div className="relative">
+              <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input id="fullName" autoComplete="name" required value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" className="h-11 rounded-xl border-border bg-background pl-10 text-sm shadow-none focus-visible:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-bold">Email address</Label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="h-11 rounded-xl border-border bg-background pl-10 text-sm shadow-none focus-visible:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-bold">Create password</Label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" className="h-11 rounded-xl border-border bg-background pl-10 pr-11 text-sm shadow-none focus-visible:ring-indigo-500" />
+              <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label={showPassword ? "Hide password" : "Show password"}>
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
-
-              <button
-                type="button"
-                onClick={() => setRole("mentor")}
-                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 ${
-                  role === "mentor"
-                    ? "bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
-                    : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Video className="w-3.5 h-3.5" /> Mentor / Admin
-              </button>
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="p-6 space-y-4">
-            
-            {/* 1-Click Google Sign Up Button */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block text-center">
-                Fast 1-Click Google Sign Up
-              </span>
-              <div className="flex justify-center">
-                <GoogleAuthButton
-                  onAuthChange={(userSession) => {
-                    if (userSession) {
-                      if (role === "mentor") {
-                        router.push("/mentor/interviews");
-                      } else {
-                        router.push("/interview/batch_01_frontend");
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </div>
+          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500">
+            {loading ? <><Loader2 className="mr-2 size-4 animate-spin" /> Creating account…</> : `Create ${role === "mentor" ? "mentor" : "candidate"} account`}
+          </Button>
+        </form>
 
-            <div className="relative flex items-center justify-center my-2">
-              <div className="border-t border-slate-800 w-full" />
-              <span className="bg-slate-900 px-3 text-[10px] text-slate-500 uppercase tracking-widest absolute">
-                Or Register With Email
-              </span>
-            </div>
-
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="fullName" className="text-xs text-slate-300 font-medium">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 size-4 text-slate-500" />
-                  <Input
-                    id="fullName"
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="pl-9 h-10 border-slate-700 bg-slate-950 text-xs text-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs text-slate-300 font-medium">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 size-4 text-slate-500" />
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
-                    className="pl-9 h-10 border-slate-700 bg-slate-950 text-xs text-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs text-slate-300 font-medium">Create Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 size-4 text-slate-500" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Choose a strong password"
-                    className="pl-9 pr-9 h-10 border-slate-700 bg-slate-950 text-xs text-slate-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
-                  >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-indigo-500 font-bold text-xs hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/20"
-              >
-                {loading ? "Creating Account..." : `Register as ${role === "mentor" ? "Mentor" : "Candidate"} →`}
-              </Button>
-            </form>
-
-            <div className="text-center pt-2 border-t border-slate-800">
-              <p className="text-xs text-slate-400">
-                Already have an account?{" "}
-                <Link href="/login" className="text-indigo-400 font-bold hover:underline">
-                  Sign In
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <p className="mt-5 text-center text-xs text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/login" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Sign in</Link>
+        </p>
       </div>
+
+      <p className="mt-4 text-center text-[11px] leading-5 text-muted-foreground">
+        Your account helps keep interview sessions and evaluation history organized.
+      </p>
     </div>
   );
 }

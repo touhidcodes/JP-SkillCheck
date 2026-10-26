@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Video, Sparkles, Clock, User, Calendar, BookOpen, 
-  Copy, Check, Send, Plus, Trash2, ArrowRight, ShieldCheck,
-  FileSpreadsheet, Upload, Lock, Users, Camera, AlertCircle, Link as LinkIcon, Download, Loader2
+import {
+  Video, Sparkles, Clock, Calendar,
+  Copy, Check, Trash2, ArrowRight, ShieldCheck,
+  FileSpreadsheet, Upload, Lock, Users, Camera, Link as LinkIcon, Download, Loader2
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -50,7 +49,6 @@ export function CreateInterviewView() {
   // Google Sheet Link / Upload / Whitelist (Requirement 3)
   const [googleSheetUrl, setGoogleSheetUrl] = useState("");
   const [isFetchingSheet, setIsFetchingSheet] = useState(false);
-  const [allowedEmailsText, setAllowedEmailsText] = useState("");
   const [parsedEmails, setParsedEmails] = useState<string[]>([
     "student1@example.com",
     "student2@example.com",
@@ -142,7 +140,7 @@ export function CreateInterviewView() {
 
         const extractedEmails: string[] = [];
         data.forEach((row) => {
-          Object.entries(row).forEach(([_, val]) => {
+          Object.entries(row).forEach(([, val]) => {
             if (typeof val === "string" && val.includes("@")) {
               const cleaned = val.trim().toLowerCase();
               if (!extractedEmails.includes(cleaned)) {
@@ -165,20 +163,6 @@ export function CreateInterviewView() {
     };
 
     reader.readAsBinaryString(file);
-  };
-
-  const handleAddManualEmails = () => {
-    if (!allowedEmailsText.trim()) return;
-    const emails = allowedEmailsText
-      .split(/[\n,;]+/)
-      .map((e) => e.trim().toLowerCase())
-      .filter((e) => e.includes("@") && !parsedEmails.includes(e));
-
-    if (emails.length > 0) {
-      setParsedEmails([...parsedEmails, ...emails]);
-      setAllowedEmailsText("");
-      toast.success(`Added ${emails.length} emails to authorized list.`);
-    }
   };
 
   const handleRemoveEmail = (emailToRemove: string) => {

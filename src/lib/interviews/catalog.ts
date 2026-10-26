@@ -24,11 +24,11 @@ export type InterviewTemplate = {
   instructions?: string;
 };
 
-export type PublicInterviewTemplate = Omit<InterviewTemplate, "questions"> & {
+export type PublicInterviewTemplate = Omit<InterviewTemplate, "questions" | "allowedEmails"> & {
   questions: Array<Pick<InterviewQuestion, "id" | "prompt" | "durationSeconds">>;
   batch?: string;
   cameraMandatory?: boolean;
-  allowedEmails?: string[];
+  emailVerificationRequired: boolean;
   slotStartTime?: string;
   slotEndTime?: string;
   instructions?: string;
@@ -36,7 +36,7 @@ export type PublicInterviewTemplate = Omit<InterviewTemplate, "questions"> & {
 
 export async function getInterviewTemplate(id: string): Promise<InterviewTemplate | null> {
   const interview = await getCreatedInterviewFromSheets(id);
-  if (interview) {
+  if (interview && interview.questions.length > 0) {
     return {
       ...interview,
       questions: interview.questions,
@@ -54,7 +54,7 @@ export function toPublicInterview(interview: InterviewTemplate): PublicInterview
     durationMinutes: interview.durationMinutes,
     batch: interview.batch,
     cameraMandatory: interview.cameraMandatory ?? true,
-    allowedEmails: interview.allowedEmails,
+    emailVerificationRequired: Boolean(interview.allowedEmails?.length),
     slotStartTime: interview.slotStartTime,
     slotEndTime: interview.slotEndTime,
     instructions: interview.instructions,
